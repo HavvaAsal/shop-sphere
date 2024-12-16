@@ -1,184 +1,212 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 
-export default function SignUpForm() {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm();
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+function SignUpForm({ onClose }) {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm();
 
-  useEffect(() => {
-    // Roller API'den alınır
-    axios.get("https://workintech-fe-ecommerce.onrender.com/roles")
-      .then((response) => {
-        setRoles(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, []);
-
-  // Role id'yi izleriz
-  const selectedRole = watch("role_id");
+  const [role, setRole] = useState("customer");
 
   const onSubmit = async (data) => {
-    setLoading(true);
     try {
-      // "passwordValidation" verisini göndermeyiz, sadece "password" göndeririz
-      const { passwordValidation, ...dataToSend } = data;
+      // Mağaza rolüne göre ek alanları payload içine ekle
+      const payload =
+        role === "store"
+          ? {
+              ...data,
+              store: {
+                name: data.storeName,
+                phone: data.storePhone,
+                tax_no: data.storeTaxNo,
+                bank_account: data.storeBankAccount,
+              },
+            }
+          : data;
 
-      // Kayıt verisi API'ye gönderilir
-      await axios.post("https://workintech-fe-ecommerce.onrender.com/signup", dataToSend);
+      // API çağrısı
+      await axios.post("https://workintech-fe-ecommerce.onrender.com/signup", payload);
+
+      // Başarı mesajı ve yönlendirme
       alert("Hesabınızı etkinleştirmek için e-postadaki bağlantıya tıklamanız gerekiyor!");
-      window.history.back(); // Önceki sayfaya dönülür
+      onClose();
+      window.history.back();
     } catch (err) {
-      setError("Bir hata oluştu!");
-    } finally {
-      setLoading(false);
+      // API'den gelen hatayı göster
+      if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+      }
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      {/* Ad Alanı */}
-      <div>
-        <label>Ad:</label>
-        <input
-          type="text"
-          {...register("name", { required: "Ad gereklidir", minLength: 3 })}
-        />
-        {errors.name && <p>{errors.name.message}</p>}
-      </div>
-
-      {/* E-posta Alanı */}
-      <div>
-        <label>Email:</label>
-        <input
-          type="email"
-          {...register("email", { required: "E-posta gereklidir" })}
-        />
-        {errors.email && <p>{errors.email.message}</p>}
-      </div>
-
-      {/* Şifre Alanı */}
-      <div>
-        <label>Şifre:</label>
-        <input
-          type="password"
-          {...register("password", {
-            required: "Şifre gereklidir",
-            minLength: 8,
-            pattern:
-              /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-          })}
-        />
-        {errors.password && <p>{errors.password.message}</p>}
-      </div>
-
-      {/* Şifre Doğrulama Alanı */}
-      <div>
-        <label>Şifre Doğrulama:</label>
-        <input
-          type="password"
-          {...register("passwordValidation", {
-            required: "Şifre doğrulaması gereklidir",
-            validate: (value) => value === watch("password") || "Şifreler uyuşmuyor",
-          })}
-        />
-        {errors.passwordValidation && <p>{errors.passwordValidation.message}</p>}
-      </div>
-
-      {/* Rol Seçimi */}
-      <div>
-        <label>Rol:</label>
-        <select {...register("role_id", { required: "Rol seçilmelidir" })}>
-          <option value="">Bir rol seçin</option>
-          {roles.map((role) => (
-            <option key={role.id} value={role.id}>
-              {role.name}
-            </option>
-          ))}
-        </select>
-        {errors.role_id && <p>{errors.role_id.message}</p>}
-      </div>
-
-      {/* Mağaza Detayları (Eğer rol "store" seçildiyse) */}
-      {selectedRole === "2" && (
-        <div>
-          {/* Mağaza Adı */}
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-md w-full max-w-lg shadow-lg overflow-y-auto max-h-[90vh]">
+        <h2 className="text-xl font-bold mb-4">Kayıt Formu</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Ad */}
           <div>
-            <label>Mağaza Adı:</label>
+            <label className="block text-sm font-medium">Ad</label>
             <input
               type="text"
-              {...register("store.name", {
-                required: "Mağaza adı gereklidir",
-                minLength: {
-                  value: 3,
-                  message: "Mağaza adı en az 3 karakter olmalıdır",
-                },
+              {...register("name", {
+                required: "Ad zorunludur.",
+                minLength: { value: 3, message: "Ad en az 3 karakter olmalıdır." },
               })}
+              className="w-full border border-gray-300 rounded-md p-2"
             />
-            {errors.store?.name && <p>{errors.store?.name.message}</p>}
+            {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
           </div>
 
-          {/* Mağaza Telefonu */}
+          {/* E-posta */}
           <div>
-            <label>Mağaza Telefonu:</label>
+            <label className="block text-sm font-medium">E-posta</label>
             <input
-              type="tel"
-              {...register("store.phone", {
-                required: "Mağaza telefonu gereklidir",
+              type="email"
+              {...register("email", {
+                required: "E-posta zorunludur.",
                 pattern: {
-                  value: /^(\+90|0)?5\d{9}$/, // Türkiye telefon numarası deseni
-                  message: "Geçerli bir Türkiye telefon numarası girin",
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Geçerli bir e-posta adresi girin.",
                 },
               })}
+              className="w-full border border-gray-300 rounded-md p-2"
             />
-            {errors.store?.phone && <p>{errors.store?.phone.message}</p>}
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
           </div>
 
-          {/* Mağaza Vergi Kimlik Numarası */}
+          {/* Şifre */}
           <div>
-            <label>Mağaza Vergi Kimlik Numarası:</label>
+            <label className="block text-sm font-medium">Şifre</label>
             <input
-              type="text"
-              {...register("store.tax_no", {
-                required: "Vergi kimlik numarası gereklidir",
+              type="password"
+              {...register("password", {
+                required: "Şifre zorunludur.",
+                minLength: { value: 8, message: "Şifre en az 8 karakter olmalıdır." },
                 pattern: {
-                  value: /^T\d{4}V\d{7}$/, // Vergi kimlik numarası deseni
-                  message: "Geçerli bir vergi kimlik numarası girin (TXXXXVXXXXXX)",
+                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/,
+                  message: "Şifre, rakam, küçük ve büyük harf, özel karakter içermelidir.",
                 },
               })}
+              className="w-full border border-gray-300 rounded-md p-2"
             />
-            {errors.store?.tax_no && <p>{errors.store?.tax_no.message}</p>}
+            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
           </div>
 
-          {/* Mağaza Banka Hesabı */}
+          {/* Şifre Doğrulama */}
           <div>
-            <label>Mağaza Banka Hesabı:</label>
+            <label className="block text-sm font-medium">Şifre Doğrulama</label>
             <input
-              type="text"
-              {...register("store.bank_account", {
-                required: "Banka hesabı gereklidir",
-                pattern: {
-                  value: /^[A-Z]{2}\d{2}[A-Z0-9]{11}$/, // IBAN deseni
-                  message: "Geçerli bir IBAN adresi girin",
-                },
+              type="password"
+              {...register("confirmPassword", {
+                validate: (value) => value === watch("password") || "Şifreler eşleşmiyor.",
               })}
+              className="w-full border border-gray-300 rounded-md p-2"
             />
-            {errors.store?.bank_account && <p>{errors.store?.bank_account.message}</p>}
+            {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>}
           </div>
-        </div>
-      )}
 
-      {/* Gönder Butonu */}
-      <button type="submit" disabled={loading}>
-        {loading ? "Gönderiliyor..." : "Gönder"}
-      </button>
+          {/* Rol */}
+          <div>
+            <label className="block text-sm font-medium">Rol</label>
+            <select
+              {...register("role_id", { required: true })}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full border border-gray-300 rounded-md p-2"
+            >
+              <option value="customer">Müşteri</option>
+              <option value="admin">Yönetici</option>
+              <option value="store">Mağaza</option>
+            </select>
+          </div>
 
-      {/* Hata Mesajı */}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-    </form>
+          {/* Mağaza Rolüne Göre Ek Alanlar */}
+          {role === "store" && (
+            <>
+              <div>
+                <label className="block text-sm font-medium">Mağaza Adı</label>
+                <input
+                  type="text"
+                  {...register("storeName", {
+                    required: "Mağaza Adı zorunludur.",
+                    minLength: { value: 3, message: "Mağaza Adı en az 3 karakter olmalıdır." },
+                  })}
+                  className="w-full border border-gray-300 rounded-md p-2"
+                />
+                {errors.storeName && <p className="text-red-500 text-sm">{errors.storeName.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Mağaza Telefonu</label>
+                <input
+                  type="text"
+                  {...register("storePhone", {
+                    required: "Mağaza Telefonu zorunludur.",
+                    pattern: {
+                      value: /^(\+90|0)?5\d{9}$/,
+                      message: "Geçerli bir Türkiye telefon numarası girin.",
+                    },
+                  })}
+                  className="w-full border border-gray-300 rounded-md p-2"
+                />
+                {errors.storePhone && <p className="text-red-500 text-sm">{errors.storePhone.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Vergi Kimlik Numarası</label>
+                <input
+                  type="text"
+                  {...register("storeTaxNo", {
+                    required: "Vergi Kimlik Numarası zorunludur.",
+                  })}
+                  className="w-full border border-gray-300 rounded-md p-2"
+                />
+                {errors.storeTaxNo && <p className="text-red-500 text-sm">{errors.storeTaxNo.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Mağaza Banka Hesabı</label>
+                <input
+                  type="text"
+                  {...register("storeBankAccount", {
+                    required: "Banka Hesabı zorunludur.",
+                  })}
+                  className="w-full border border-gray-300 rounded-md p-2"
+                />
+                {errors.storeBankAccount && <p className="text-red-500 text-sm">{errors.storeBankAccount.message}</p>}
+              </div>
+            </>
+          )}
+
+          {/* Butonlar */}
+          <div className="flex justify-between items-center">
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-500 text-white px-4 py-2 rounded-md"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+            >
+              {isSubmitting ? (
+                <span className="spinner-border animate-spin border-2 border-white rounded-full w-5 h-5"></span>
+              ) : (
+                "Gönder"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
+
+export default SignUpForm;
