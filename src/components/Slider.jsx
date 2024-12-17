@@ -1,12 +1,12 @@
 import React from "react";
 
 const Slider = () => {
-  const heroImage = new URL('/images/product-slide-1.jpg', import.meta.url).href;
+  const sliderImage = '/images/product-slide-1.jpg';
 
   return (
     <div className="relative w-full h-[600px]">
       <img 
-        src={heroImage}
+        src={sliderImage}
         alt="Hero Banner"
         className="w-full h-full object-cover"
       />

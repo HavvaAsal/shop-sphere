@@ -1,7 +1,7 @@
 import React from "react";
 
 function ProductSlider() {
-  const sliderImage = new URL('/images/product-slide-1.jpg', import.meta.url).href;
+  const sliderImage = '/images/product-slider-man.png';
 
   return (
     <div className="bg-[#23856D] text-white relative h-[600px] flex items-center">
@@ -30,13 +30,13 @@ function ProductSlider() {
       </div>
 
       {/* Navigasyon Okları */}
-      <button 
+      <button
         className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl opacity-70 hover:opacity-100 transition-opacity z-20"
         aria-label="Previous slide"
       >
         ‹
       </button>
-      <button 
+      <button
         className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl opacity-70 hover:opacity-100 transition-opacity z-20"
         aria-label="Next slide"
       >

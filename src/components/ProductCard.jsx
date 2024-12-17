@@ -3,14 +3,19 @@ import React from "react";
 function ProductCard({ imageNumber, title, subtitle, price }) {
     const colors = ["#23A6F0", "#23856D", "#E77C40", "#252B42"];
 
-    // Resim yollarını dinamik olarak oluştur
+    // Resim yollarını doğrudan public klasöründen al
     const getImagePath = (number) => {
-        return new URL(`/images/product-card-${number}.jpg`, import.meta.url).href;
+        if (number === 6 || number === 7) {
+            return `/images/product-card-6.jpg`;
+        } else if (number === 8) {
+            return `/images/product-card-7.jpg`;
+        }
+        return `/images/product-card-${number}.jpg`;
     };
 
     return (
         <div className="flex flex-col items-center">
-            <img 
+            <img
                 src={getImagePath(imageNumber)}
                 alt={title}
                 className="w-full h-auto object-cover mb-4 hover:opacity-90 transition-opacity"
