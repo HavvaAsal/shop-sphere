@@ -1,100 +1,183 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User, Search, ShoppingCart, Menu } from "lucide-react";
 import SignupForm from "../components/SignUpForm";
-import LoginForm from "../components/LoginForm"; // LoginForm bileşeni
+import LoginForm from "../components/LoginForm";
+import Gravatar from "react-gravatar";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useHistory, Link } from 'react-router-dom';
 
 function Header() {
-  const [isModalOpen, setModalOpen] = useState(false); // Modal durumu
-  const [isLoginMode, setLoginMode] = useState(true); // Modalda login mi signup mı gösterilecek
-  const [isMenuOpen, setMenuOpen] = useState(false); // Menü durumu
-  const [isLoggedIn, setLoggedIn] = useState(false); // Kullanıcı giriş yapmış mı?
+  const history = useHistory();
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [isLoginMode, setLoginMode] = useState(true);
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    try {
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      }
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      localStorage.removeItem("user");
+    }
+  }, []);
 
   const openModal = (mode) => {
-    setLoginMode(mode === "login"); // Hangi mod olduğunu belirle
-    setModalOpen(true); // Modal'ı aç
+    setLoginMode(mode === "login");
+    setModalOpen(true);
   };
 
-  const closeModal = () => setModalOpen(false); // Modal'ı kapat
-  const toggleMenu = () => setMenuOpen((prev) => !prev); // Menü durumunu değiştir
+  const closeModal = () => setModalOpen(false);
+  const toggleMenu = () => setMenuOpen((prev) => !prev);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    setUser(null);
+    history.push('/');
+  };
+
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'Product', path: '/product' },
+    { name: 'Pricing', path: '/pricing' },
+    { name: 'Contact', path: '/contact' },
+  ];
 
   return (
     <header className="bg-white shadow-md relative z-40">
-      {/* Üst Kısım: Bandage ve İkonlar */}
-      <div className="flex justify-between items-center px-4 py-2">
-        {/* Bandage Yazısı */}
-        <h1 className="text-lg font-bold text-gray-700 pl-2">Bandage</h1>
+      <ToastContainer position="top-right" autoClose={3000} />
+      
+      <div className="container mx-auto">
+        {/* Üst Kısım: Bandage ve İkonlar */}
+        <div className="flex justify-between items-center px-4 py-3">
+          {/* Logo ve İkonlar */}
+          <div className="flex items-center justify-between w-full">
+            {/* Logo */}
+            <Link to="/" className="text-2xl font-bold">
+              Bandage
+            </Link>
 
-        {/* İkonlar */}
-        <div className="flex space-x-4 pr-2">
-          <Search className="w-5 h-5 text-gray-600" />
-          {!isLoggedIn ? (
-            <>
-              {/* Kullanıcı giriş yapmadıysa Login ve Signup */}
-              <User
-                className="w-5 h-5 text-gray-600 cursor-pointer"
-                onClick={() => openModal("login")} // Login modalını aç
-              />
-            </>
-          ) : (
-            <>
-              {/* Kullanıcı giriş yaptıysa Logout */}
-              <button
-                onClick={() => {
-                  setLoggedIn(false); // Kullanıcı çıkış yapar
-                  alert("Çıkış yapıldı!");
-                }}
-                className="text-gray-600 hover:text-red-600 text-sm"
-              >
-                Logout
+            {/* İkonlar */}
+            <div className="flex items-center space-x-4">
+              {/* Login/User Icon */}
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <Gravatar email={user.email} size={32} className="rounded-full" />
+                  <button onClick={handleLogout} className="text-gray-600 hover:text-gray-800">
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => openModal("login")} className="text-gray-600 hover:text-gray-800">
+                  <User className="w-6 h-6" />
+                </button>
+              )}
+              
+              {/* Search Icon */}
+              <button className="text-gray-600 hover:text-gray-800">
+                <Search className="w-6 h-6" />
               </button>
-            </>
-          )}
-          <ShoppingCart className="w-5 h-5 text-gray-600" />
-          <Menu
-            className="w-5 h-5 text-gray-600 cursor-pointer"
-            onClick={toggleMenu} // Menü ikonuna tıklanınca menü açılır/kapanır
-          />
+              
+              {/* Cart Icon */}
+              <button className="text-gray-600 hover:text-gray-800">
+                <ShoppingCart className="w-6 h-6" />
+              </button>
+              
+              {/* Menu Icon */}
+              <button 
+                className="text-gray-600 hover:text-gray-800"
+                onClick={toggleMenu}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Navigation Links - Mobile Menu */}
+        <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden`}>
+          <nav className="py-2 border-t border-gray-200">
+            <ul className="flex flex-col items-center text-center">
+              {navLinks.map((link) => (
+                <li key={link.name} className="w-full">
+                  <Link
+                    to={link.path}
+                    className="block px-4 py-2 text-gray-600 hover:bg-gray-50"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+
+        {/* Navigation Links - Desktop */}
+        <nav className="hidden md:block border-t border-gray-200">
+          <ul className="flex justify-center items-center space-x-8 py-4">
+            {navLinks.map((link) => (
+              <li key={link.name}>
+                <Link
+                  to={link.path}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  {link.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
-      {/* Modal açıldığında doğru form gösterilir */}
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 shadow-md w-80">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg w-96">
             {isLoginMode ? (
-              <LoginForm
-              onClose={closeModal}
-              onLogin={() => {
-                setLoggedIn(true);
-                closeModal();
-              }}
-              onSwitchToSignup={() => setLoginMode(false)} // Sign up formuna geç
-            />
+              <>
+                <LoginForm onClose={closeModal} onLogin={handleLogin} />
+                <div className="flex justify-between items-center mt-4 border-t pt-4">
+                  <button
+                    onClick={() => setLoginMode(false)}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    Sign up
+                  </button>
+                  <button
+                    onClick={closeModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
             ) : (
-              <SignupForm
-                onClose={closeModal} // Modal'ı kapatma fonksiyonu
-              />
+              <>
+                <SignupForm onClose={closeModal} />
+                <div className="flex justify-end mt-4 border-t pt-4">
+                  <button
+                    onClick={closeModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
-      )}
-
-      {/* Alt Kısım: Linkler */}
-      {isMenuOpen && ( // Menü açık olduğunda linkleri göster
-        <nav className="flex flex-col items-center space-y-2 py-4 bg-gray-50">
-          <a href="#" className="text-gray-600 hover:text-gray-800 text-sm">
-            Home
-          </a>
-          <a href="#" className="text-gray-600 hover:text-gray-800 text-sm">
-            Product
-          </a>
-          <a href="#" className="text-gray-600 hover:text-gray-800 text-sm">
-            Pricing
-          </a>
-          <a href="#" className="text-gray-600 hover:text-gray-800 text-sm">
-            Contact
-          </a>
-        </nav>
       )}
     </header>
   );
