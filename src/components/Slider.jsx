@@ -1,18 +1,30 @@
 import React from "react";
 
 const Slider = () => {
+  const heroImage = new URL('/images/product-slide-1.jpg', import.meta.url).href;
+
   return (
-    <div className="relative w-full h-screen bg-cover bg-center" style={{ backgroundImage: "url('/images/product-slide-1.jpg')" }}>
-    
-      <div className="absolute inset-0 flex flex-col justify-center items-center text-center text-white bg-black bg-opacity-50">
-        <p className="text-2xl mb-2">Summer 2020</p>
-        <h1 className="text-3xl font-medium mb-4">NEW COLLECTION</h1>
-        <p className="text-2xl max-w-xs mb-6">
-          We know how large objects will act, but things on a small scale.
-        </p>
-        <button className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
-          SHOP NOW
-        </button>
+    <div className="relative w-full h-[600px]">
+      <img 
+        src={heroImage}
+        alt="Hero Banner"
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-16 bg-black bg-opacity-30">
+        <div className="max-w-2xl text-white">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4">
+            SUMMER 2020
+          </h2>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            NEW COLLECTION
+          </h1>
+          <p className="text-lg md:text-xl mb-8">
+            We know how large objects will act, but things on a small scale.
+          </p>
+          <button className="bg-[#2DC071] text-white px-8 py-3 rounded-md text-lg font-medium hover:bg-opacity-90 transition-colors">
+            SHOP NOW
+          </button>
+        </div>
       </div>
     </div>
   );
