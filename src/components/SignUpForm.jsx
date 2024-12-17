@@ -1,210 +1,216 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
+import { ENDPOINTS } from "../config/api";
 
-function SignUpForm({ onClose }) {
+function SignUpForm({ onClose, onSignupSuccess }) {
   const {
     register,
     handleSubmit,
     watch,
-    setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm();
 
   const [role, setRole] = useState("customer");
+  const password = watch("password");
 
   const onSubmit = async (data) => {
+    // Şifre doğrulama kontrolü
+    if (data.password !== data.confirmPassword) {
+      alert("Şifreler eşleşmiyor!");
+      return;
+    }
+
     try {
-      // Mağaza rolüne göre ek alanları payload içine ekle
-      const payload =
-        role === "store"
-          ? {
-              ...data,
-              store: {
-                name: data.storeName,
-                phone: data.storePhone,
-                tax_no: data.storeTaxNo,
-                bank_account: data.storeBankAccount,
-              },
-            }
-          : data;
+      console.log("Gönderilen veri:", {
+        ...data,
+        role,
+        ...(role === "store" && {
+          store: {
+            name: data.storeName,
+            phone: data.storePhone,
+            tax_no: data.storeTaxNo,
+            bank_account: data.storeBankAccount,
+          },
+        }),
+      });
 
-      // API çağrısı
-      await axios.post("https://workintech-fe-ecommerce.onrender.com/signup", payload);
-
-      // Başarı mesajı ve yönlendirme
-      alert("Hesabınızı etkinleştirmek için e-postadaki bağlantıya tıklamanız gerekiyor!");
-      onClose();
-      window.history.back();
-    } catch (err) {
-      // API'den gelen hatayı göster
-      if (err.response?.data?.message) {
-        alert(err.response.data.message);
-      } else {
-        alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+      const response = await axios.post(ENDPOINTS.SIGNUP, {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role_id: role,
+        ...(role === "store" && {
+          store: {
+            name: data.storeName,
+            phone: data.storePhone,
+            tax_no: data.storeTaxNo,
+            bank_account: data.storeBankAccount,
+          },
+        }),
+      });
+      
+      console.log("Signup response:", response.data);
+      
+      if (response.data) {
+        alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+        if (onSignupSuccess) onSignupSuccess();
+        onClose();
       }
+    } catch (err) {
+      console.error("Signup error details:", {
+        response: err.response?.data,
+        status: err.response?.status,
+        error: err.message
+      });
+      
+      const errorMessage = err.response?.data?.message || "Kayıt sırasında bir hata oluştu.";
+      alert(errorMessage);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-md w-full max-w-lg shadow-lg overflow-y-auto max-h-[90vh]">
-        <h2 className="text-xl font-bold mb-4">Kayıt Formu</h2>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Ad */}
-          <div>
-            <label className="block text-sm font-medium">Ad</label>
-            <input
-              type="text"
-              {...register("name", {
-                required: "Ad zorunludur.",
-                minLength: { value: 3, message: "Ad en az 3 karakter olmalıdır." },
-              })}
-              className="w-full border border-gray-300 rounded-md p-2"
-            />
-            {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-          </div>
+    <div className="p-4 max-h-[80vh] overflow-y-auto">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-white py-2">Kayıt Ol</h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Rol Seçimi */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">Hesap Türü</label>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full border border-gray-300 rounded-md p-2"
+          >
+            <option value="customer">Müşteri</option>
+            <option value="store">Mağaza</option>
+            <option value="admin">Yönetici</option>
+          </select>
+        </div>
 
-          {/* E-posta */}
-          <div>
-            <label className="block text-sm font-medium">E-posta</label>
-            <input
-              type="email"
-              {...register("email", {
-                required: "E-posta zorunludur.",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Geçerli bir e-posta adresi girin.",
-                },
-              })}
-              className="w-full border border-gray-300 rounded-md p-2"
-            />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
-          </div>
+        {/* Ad */}
+        <div>
+          <label className="block text-sm font-medium">Ad</label>
+          <input
+            type="text"
+            {...register("name", {
+              required: "Ad zorunludur",
+              minLength: { value: 3, message: "Ad en az 3 karakter olmalıdır" }
+            })}
+            className="w-full border border-gray-300 rounded-md p-2"
+          />
+          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+        </div>
 
-          {/* Şifre */}
-          <div>
-            <label className="block text-sm font-medium">Şifre</label>
-            <input
-              type="password"
-              {...register("password", {
-                required: "Şifre zorunludur.",
-                minLength: { value: 8, message: "Şifre en az 8 karakter olmalıdır." },
-                pattern: {
-                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/,
-                  message: "Şifre, rakam, küçük ve büyük harf, özel karakter içermelidir.",
-                },
-              })}
-              className="w-full border border-gray-300 rounded-md p-2"
-            />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
-          </div>
+        {/* Email */}
+        <div>
+          <label className="block text-sm font-medium">Email</label>
+          <input
+            type="email"
+            {...register("email", {
+              required: "Email zorunludur",
+              pattern: {
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                message: "Geçersiz email adresi"
+              }
+            })}
+            className="w-full border border-gray-300 rounded-md p-2"
+          />
+          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+        </div>
 
-          {/* Şifre Doğrulama */}
-          <div>
-            <label className="block text-sm font-medium">Şifre Doğrulama</label>
-            <input
-              type="password"
-              {...register("confirmPassword", {
-                validate: (value) => value === watch("password") || "Şifreler eşleşmiyor.",
-              })}
-              className="w-full border border-gray-300 rounded-md p-2"
-            />
-            {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>}
-          </div>
+        {/* Şifre */}
+        <div>
+          <label className="block text-sm font-medium">Şifre</label>
+          <input
+            type="password"
+            {...register("password", {
+              required: "Şifre zorunludur",
+              minLength: { value: 6, message: "Şifre en az 6 karakter olmalıdır" },
+              pattern: {
+                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/,
+                message: "Şifre en az bir büyük harf, bir küçük harf ve bir rakam içermelidir"
+              }
+            })}
+            className="w-full border border-gray-300 rounded-md p-2"
+          />
+          {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+        </div>
 
-          {/* Rol */}
-          <div>
-            <label className="block text-sm font-medium">Rol</label>
-            <select
-              {...register("role_id", { required: true })}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full border border-gray-300 rounded-md p-2"
-            >
-              <option value="customer">Müşteri</option>
-              <option value="admin">Yönetici</option>
-              <option value="store">Mağaza</option>
-            </select>
-          </div>
+        {/* Şifre Doğrulama */}
+        <div>
+          <label className="block text-sm font-medium">Şifre Tekrar</label>
+          <input
+            type="password"
+            {...register("confirmPassword", {
+              required: "Şifre tekrarı zorunludur",
+              validate: value => value === password || "Şifreler eşleşmiyor"
+            })}
+            className="w-full border border-gray-300 rounded-md p-2"
+          />
+          {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>}
+        </div>
 
-          {/* Mağaza Rolüne Göre Ek Alanlar */}
-          {role === "store" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium">Mağaza Adı</label>
-                <input
-                  type="text"
-                  {...register("storeName", {
-                    required: "Mağaza Adı zorunludur.",
-                    minLength: { value: 3, message: "Mağaza Adı en az 3 karakter olmalıdır." },
-                  })}
-                  className="w-full border border-gray-300 rounded-md p-2"
-                />
-                {errors.storeName && <p className="text-red-500 text-sm">{errors.storeName.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Mağaza Telefonu</label>
-                <input
-                  type="text"
-                  {...register("storePhone", {
-                    required: "Mağaza Telefonu zorunludur.",
-                    pattern: {
-                      value: /^(\+90|0)?5\d{9}$/,
-                      message: "Geçerli bir Türkiye telefon numarası girin.",
-                    },
-                  })}
-                  className="w-full border border-gray-300 rounded-md p-2"
-                />
-                {errors.storePhone && <p className="text-red-500 text-sm">{errors.storePhone.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Vergi Kimlik Numarası</label>
-                <input
-                  type="text"
-                  {...register("storeTaxNo", {
-                    required: "Vergi Kimlik Numarası zorunludur.",
-                  })}
-                  className="w-full border border-gray-300 rounded-md p-2"
-                />
-                {errors.storeTaxNo && <p className="text-red-500 text-sm">{errors.storeTaxNo.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Mağaza Banka Hesabı</label>
-                <input
-                  type="text"
-                  {...register("storeBankAccount", {
-                    required: "Banka Hesabı zorunludur.",
-                  })}
-                  className="w-full border border-gray-300 rounded-md p-2"
-                />
-                {errors.storeBankAccount && <p className="text-red-500 text-sm">{errors.storeBankAccount.message}</p>}
-              </div>
-            </>
-          )}
+        {/* Mağaza bilgileri (sadece role === "store" ise göster) */}
+        {role === "store" && (
+          <>
+            <div>
+              <label className="block text-sm font-medium">Mağaza Adı</label>
+              <input
+                type="text"
+                {...register("storeName", { required: "Mağaza adı zorunludur" })}
+                className="w-full border border-gray-300 rounded-md p-2"
+              />
+              {errors.storeName && <p className="text-red-500 text-sm">{errors.storeName.message}</p>}
+            </div>
 
-          {/* Butonlar */}
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-gray-500 text-white px-4 py-2 rounded-md"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
-            >
-              {isSubmitting ? (
-                <span className="spinner-border animate-spin border-2 border-white rounded-full w-5 h-5"></span>
-              ) : (
-                "Gönder"
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+            <div>
+              <label className="block text-sm font-medium">Mağaza Telefonu</label>
+              <input
+                type="text"
+                {...register("storePhone", { required: "Mağaza telefonu zorunludur" })}
+                className="w-full border border-gray-300 rounded-md p-2"
+              />
+              {errors.storePhone && <p className="text-red-500 text-sm">{errors.storePhone.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Vergi No</label>
+              <input
+                type="text"
+                {...register("storeTaxNo", { required: "Vergi no zorunludur" })}
+                className="w-full border border-gray-300 rounded-md p-2"
+              />
+              {errors.storeTaxNo && <p className="text-red-500 text-sm">{errors.storeTaxNo.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium">Banka Hesabı</label>
+              <input
+                type="text"
+                {...register("storeBankAccount", { required: "Banka hesabı zorunludur" })}
+                className="w-full border border-gray-300 rounded-md p-2"
+              />
+              {errors.storeBankAccount && <p className="text-red-500 text-sm">{errors.storeBankAccount.message}</p>}
+            </div>
+          </>
+        )}
+
+        <div className="flex justify-between items-center sticky bottom-0 bg-white py-2 mt-4">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Kayıt Ol
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            İptal
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
