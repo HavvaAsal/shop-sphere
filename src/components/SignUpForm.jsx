@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useDispatch } from 'react-redux';
+import { signupUser } from '../redux/actions/clientThunks';
 import axios from "axios";
 import { ENDPOINTS } from "../config/api";
 
 function SignUpForm({ onClose, onSignupSuccess }) {
+  const dispatch = useDispatch();
   const {
     register,
     handleSubmit,
@@ -15,58 +18,13 @@ function SignUpForm({ onClose, onSignupSuccess }) {
   const password = watch("password");
 
   const onSubmit = async (data) => {
-    // Şifre doğrulama kontrolü
+    // Password validation
     if (data.password !== data.confirmPassword) {
-      alert("Şifreler eşleşmiyor!");
+      alert("Passwords do not match!");
       return;
     }
-
-    try {
-      console.log("Gönderilen veri:", {
-        ...data,
-        role,
-        ...(role === "store" && {
-          store: {
-            name: data.storeName,
-            phone: data.storePhone,
-            tax_no: data.storeTaxNo,
-            bank_account: data.storeBankAccount,
-          },
-        }),
-      });
-
-      const response = await axios.post(ENDPOINTS.SIGNUP, {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        role_id: role,
-        ...(role === "store" && {
-          store: {
-            name: data.storeName,
-            phone: data.storePhone,
-            tax_no: data.storeTaxNo,
-            bank_account: data.storeBankAccount,
-          },
-        }),
-      });
-      
-      console.log("Signup response:", response.data);
-      
-      if (response.data) {
-        alert("Kayıt başarılı! Giriş yapabilirsiniz.");
-        if (onSignupSuccess) onSignupSuccess();
-        onClose();
-      }
-    } catch (err) {
-      console.error("Signup error details:", {
-        response: err.response?.data,
-        status: err.response?.status,
-        error: err.message
-      });
-      
-      const errorMessage = err.response?.data?.message || "Kayıt sırasında bir hata oluştu.";
-      alert(errorMessage);
-    }
+    
+    dispatch(signupUser(data)); // Dispatch the thunk
   };
 
   return (

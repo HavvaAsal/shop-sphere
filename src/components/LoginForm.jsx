@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useDispatch } from 'react-redux';
+import { loginUser } from '../redux/actions/clientThunks';
 import axios from "axios";
 import { ENDPOINTS } from "../config/api";
 import { toast } from 'react-toastify';
@@ -14,6 +16,8 @@ function LoginForm({ onLogin, onClose }) {
     handleSubmit,
     formState: { errors },
   } = useForm();
+
+  const dispatch = useDispatch();
 
   const submitHandler = async (data) => {
     try {
