@@ -29,11 +29,20 @@ export const loginUser = (data) => async (dispatch) => {
 };
 
 export const signupUser = (data) => async (dispatch) => {
+  // Yalnızca gerekli alanları backend'e gönder
+  const payload = {
+    name: data.name,
+    email: data.email,
+    password: data.password,
+  };
+
+  console.log("Signing up with payload:", payload);
+
   try {
-    const response = await axios.post(ENDPOINTS.SIGNUP, data);
-    dispatch(signupSuccess(response.data)); // Assuming response.data contains user info
+    const response = await axios.post(ENDPOINTS.SIGNUP, payload);
+    dispatch(signupSuccess(response.data)); // Success action dispatch edilir
   } catch (error) {
-    dispatch(signupFailure(error.message));
+    dispatch(signupFailure(error.response?.data?.message || error.message));
     console.error('Signup failed:', error);
   }
 };

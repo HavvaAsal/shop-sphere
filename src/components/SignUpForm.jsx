@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from 'react-redux';
 import { signupUser } from '../redux/actions/clientThunks';
+import { useHistory } from 'react-router-dom';
 import axios from "axios";
 import { ENDPOINTS } from "../config/api";
 
 function SignUpForm({ onClose, onSignupSuccess }) {
   const dispatch = useDispatch();
+  const history = useHistory();
   const {
     register,
     handleSubmit,
@@ -24,7 +26,13 @@ function SignUpForm({ onClose, onSignupSuccess }) {
       return;
     }
     
-    dispatch(signupUser(data)); // Dispatch the thunk
+    await dispatch(signupUser(data));
+    
+    history.push('/');// Dispatch the thunk
+
+    if (onClose) {
+      onClose(); // Close the form if onClose is provided
+    }
   };
 
   return (
