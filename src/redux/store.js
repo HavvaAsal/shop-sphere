@@ -1,16 +1,21 @@
-import { createStore, combineReducers, applyMiddleware } from 'redux';
-import {thunk} from 'redux-thunk';
+import { createStore, applyMiddleware, combineReducers } from 'redux';
+import { thunk } from 'redux-thunk';
 import logger from 'redux-logger';
-import clientReducer from './reducers/clientReducer';
 import productReducer from './reducers/productReducer';
-import shoppingCartReducer from './reducers/shoppingCartReducer';
+import clientReducer from './reducers/clientReducer';
+import cartReducer from './reducers/cartReducer';
+import categoryReducer from './reducers/categoryReducer';
 
 const rootReducer = combineReducers({
+  products: productReducer,
   client: clientReducer,
-  product: productReducer,
-  shoppingCart: shoppingCartReducer,
+  cart: cartReducer,
+  categories: categoryReducer
 });
 
-const store = createStore(rootReducer, applyMiddleware(thunk, logger));
+const store = createStore(
+  rootReducer,
+  applyMiddleware(thunk, logger)
+);
 
 export default store;
