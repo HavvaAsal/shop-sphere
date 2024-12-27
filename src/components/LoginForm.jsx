@@ -2,14 +2,13 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from 'react-redux';
 import { loginUser } from '../redux/actions/clientThunks';
-import axios from "axios";
-import { ENDPOINTS } from "../config/api";
 import { toast } from 'react-toastify';
 import { useHistory } from 'react-router-dom';
 
 function LoginForm({ onLogin, onClose }) {
   const history = useHistory();
   const [rememberMe, setRememberMe] = useState(false);
+  const dispatch = useDispatch();
   
   const {
     register,
@@ -17,39 +16,19 @@ function LoginForm({ onLogin, onClose }) {
     formState: { errors },
   } = useForm();
 
-  const dispatch = useDispatch();
-
   const submitHandler = async (data) => {
     try {
-      const response = await axios.post(ENDPOINTS.LOGIN, data);
+      // Redux thunk'ı kullan
+      await dispatch(loginUser({ ...data, rememberMe }));
       
-      const { token, user } = response.data;
-      
-      // Token'i kaydet (Remember Me durumuna göre)
-      if (rememberMe) {
-        localStorage.setItem("token", token);
-      } else {
-        sessionStorage.setItem("token", token);
-      }
-      
-      // Kullanıcı bilgilerini kaydet
-      localStorage.setItem("user", JSON.stringify(user));
-      
-      // Başarılı giriş bildirimi
-      toast.success("Giriş başarılı!");
-      
-      // Header'daki state'i güncelle
-      if (onLogin) onLogin(user);
-      
-      // Modal'ı kapat
+      // Başarılı giriş sonrası
+      if (onLogin) onLogin();
       if (onClose) onClose();
-      
-      // Ana sayfaya yönlendir
       history.push('/');
       
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
-      toast.error(error.response?.data?.message || "Giriş başarısız! Email veya şifre hatalı.");
+      console.error("Login error:", error);
+      toast.error(error.response?.data?.message || "Giriş başarısız!");
     }
   };
 
@@ -64,7 +43,13 @@ function LoginForm({ onLogin, onClose }) {
           <input
             id="email"
             type="email"
-            {...register("email", { required: "Email gerekli" })}
+            {...register("email", { 
+              required: "Email gerekli",
+              pattern: {
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                message: "Geçerli bir email adresi giriniz"
+              }
+            })}
             className="block w-full px-3 py-2 md:py-2.5 text-sm md:text-base border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Email adresiniz"
           />
@@ -80,7 +65,13 @@ function LoginForm({ onLogin, onClose }) {
           <input
             id="password"
             type="password"
-            {...register("password", { required: "Şifre gerekli" })}
+            {...register("password", { 
+              required: "Şifre gerekli",
+              minLength: {
+                value: 6,
+                message: "Şifre en az 6 karakter olmalıdır"
+              }
+            })}
             className="block w-full px-3 py-2 md:py-2.5 text-sm md:text-base border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Şifreniz"
           />
@@ -103,12 +94,23 @@ function LoginForm({ onLogin, onClose }) {
           </label>
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Giriş Yap
-        </button>
+        {/* Butonlar için container */}
+        <div className="flex space-x-4">
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Giriş Yap
+          </button>
+          
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+          >
+            İptal
+          </button>
+        </div>
       </form>
     </div>
   );
