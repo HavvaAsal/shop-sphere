@@ -1,44 +1,39 @@
-// Action Types
-export const SET_CATEGORIES = 'SET_CATEGORIES';
-export const SET_PRODUCT_LIST = 'SET_PRODUCT_LIST';
-export const SET_TOTAL = 'SET_TOTAL';
-export const SET_FETCH_STATE = 'SET_FETCH_STATE';
-export const SET_LIMIT = 'SET_LIMIT';
-export const SET_OFFSET = 'SET_OFFSET';
-export const SET_FILTER = 'SET_FILTER';
+import api, { ENDPOINTS } from '../../config/api';
 
-// Action Creators
-export const setCategories = (categories) => ({
-  type: SET_CATEGORIES,
-  payload: categories
-});
-
-export const setProductList = (products) => ({
-  type: SET_PRODUCT_LIST,
-  payload: products
-});
-
-export const setTotal = (total) => ({
-  type: SET_TOTAL,
-  payload: total
-});
-
-export const setFetchState = (state) => ({
-  type: SET_FETCH_STATE,
-  payload: state
-});
-
-export const setLimit = (limit) => ({
-  type: SET_LIMIT,
-  payload: limit
-});
-
-export const setOffset = (offset) => ({
-  type: SET_OFFSET,
-  payload: offset
-});
+export const fetchProducts = (queryString = '') => async (dispatch) => {
+  dispatch({ type: 'FETCH_PRODUCTS_START' });
+  
+  try {
+    const url = `${ENDPOINTS.PRODUCTS}${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get(url);
+    
+    dispatch({ 
+      type: 'FETCH_PRODUCTS_SUCCESS', 
+      payload: {
+        products: response.data.products,
+        total: response.data.total
+      }
+    });
+  } catch (error) {
+    console.error('Products error:', error);
+    dispatch({ 
+      type: 'FETCH_PRODUCTS_ERROR', 
+      payload: error.message 
+    });
+  }
+};
 
 export const setFilter = (filter) => ({
-  type: SET_FILTER,
+  type: 'SET_FILTER',
   payload: filter
+});
+
+export const setSorting = (sortBy) => ({
+  type: 'SET_SORTING',
+  payload: sortBy
+});
+
+export const setPage = (page) => ({
+  type: 'SET_PAGE',
+  payload: page
 });

@@ -1,40 +1,73 @@
-import React from "react";
+import React from 'react'
+import { Link } from 'react-router-dom'
 
-function ProductCard({ imageNumber, title, subtitle, price }) {
-    const colors = ["#23A6F0", "#23856D", "#E77C40", "#252B42"];
+const ProductCard = ({ product, viewMode = 'grid' }) => {
+  if (!product) {
+    return null;
+  }
 
-    // Resim yollarını doğrudan public klasöründen al
-    const getImagePath = (number) => {
-        if (number === 6 || number === 7) {
-            return `/images/product-card-6.jpg`;
-        } else if (number === 8) {
-            return `/images/product-card-7.jpg`;
-        }
-        return `/images/product-card-${number}.jpg`;
-    };
+  // Varsayılan ürün görseli
+  const defaultImage = '/images/product-card-1.jpg';
+  
+  // API'den gelen görsel URL'sini kontrol et
+  const imageUrl = product.images?.[0] || product.image || defaultImage;
 
+  const handleImageError = (e) => {
+    e.target.src = defaultImage;
+    e.target.onerror = null;
+  };
+
+  if (viewMode === 'list') {
     return (
-        <div className="flex flex-col items-center">
-            <img
-                src={getImagePath(imageNumber)}
-                alt={title}
-                className="w-full h-auto object-cover mb-4 hover:opacity-90 transition-opacity"
-            />
-            <h3 className="text-center text-base font-bold text-gray-800 mb-2">{title}</h3>
-            <p className="text-center text-sm text-gray-600 mb-2">{subtitle}</p>
-            <p className="text-center font-bold text-gray-800 mb-3">${price}</p>
-            <div className="flex space-x-2">
-                {colors.map((color, index) => (
-                    <button
-                        key={index}
-                        className="w-4 h-4 rounded-full focus:ring-2 focus:ring-offset-2"
-                        style={{ backgroundColor: color }}
-                        aria-label={`Color option ${index + 1}`}
-                    />
-                ))}
-            </div>
+      <div className="flex border rounded-lg p-4 hover:shadow-lg transition-shadow">
+        <img 
+          src={imageUrl}
+          alt={product.name || product.title || 'Ürün Görseli'}
+          className="w-48 h-48 object-cover rounded-lg"
+          onError={handleImageError}
+        />
+        <div className="ml-6 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xl font-semibold">{product.name || product.title}</h3>
+            <p className="text-gray-600 mt-2">{product.description}</p>
+          </div>
+          <div className="flex items-center justify-between mt-4">
+            <span className="text-xl font-bold">{product.price} TL</span>
+            <button className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+              Sepete Ekle
+            </button>
+          </div>
         </div>
-    );
+      </div>
+    )
+  }
+
+  return (
+    <div className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+      <Link to={`/product/${product.id}`} className="block">
+        <img 
+          src={imageUrl}
+          alt={product.name || product.title || 'Ürün Görseli'}
+          className="w-full h-48 object-cover rounded-lg mb-4"
+          onError={handleImageError}
+        />
+        <h3 className="text-lg font-semibold">{product.name || product.title}</h3>
+        <p className="text-gray-600 mt-1 line-clamp-2">{product.description}</p>
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-xl font-bold">{product.price} TL</span>
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              // Sepete ekleme işlemi
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Sepete Ekle
+          </button>
+        </div>
+      </Link>
+    </div>
+  )
 }
 
-export default ProductCard;
+export default ProductCard
