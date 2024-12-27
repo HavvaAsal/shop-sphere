@@ -1,7 +1,8 @@
 const initialState = {
   user: null,
-  addressList: [],
-  creditCards: [],
+  isAuthenticated: false,
+  loading: false,
+  error: null,
   roles: [],
   theme: 'light',
   language: 'en'
@@ -9,6 +10,22 @@ const initialState = {
 
 const clientReducer = (state = initialState, action) => {
   switch (action.type) {
+    case 'LOGIN_SUCCESS':
+      return {
+        ...state,
+        user: action.payload,
+        isAuthenticated: true,
+        loading: false,
+        error: null
+      };
+    case 'AUTH_ERROR':
+    case 'LOGOUT':
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        loading: false
+      };
     case 'SET_USER':
       return { ...state, user: action.payload };
     case 'SET_ROLES':
