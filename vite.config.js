@@ -21,4 +21,11 @@ export default defineConfig({
   },
   publicDir: 'public',
   base: './',
+  server: {
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      overlay: false
+    }
+  }
 })

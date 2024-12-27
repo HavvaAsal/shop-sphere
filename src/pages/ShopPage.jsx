@@ -194,12 +194,12 @@ const ShopPage = () => {
             {topCategories.map(category => (
               <Link
                 key={category.id}
-                to={`/shop/${category.gender}/${category.name}/${category.id}`}
+                to={`/shop/${category.gender}/${category.code}/${category.id}`}
                 className="group relative overflow-hidden rounded-lg"
               >
                 <div className="relative pt-[100%]">
                   <img
-                    src={category.image}
+                    src={category.img}
                     alt={category.name}
                     className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
                   />
