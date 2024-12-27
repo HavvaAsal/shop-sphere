@@ -45,6 +45,14 @@ const HomePage = () => {
         }
     ];
 
+    const sampleProduct = {
+        id: 1,
+        title: "Örnek Ürün",
+        description: "Ürün açıklaması",
+        price: 99.99,
+        image: "/path/to/image.jpg"
+    }
+
     return (
         <main className="flex-1">
             {/* Hero Slider */}
