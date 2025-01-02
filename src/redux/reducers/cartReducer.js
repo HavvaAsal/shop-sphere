@@ -53,6 +53,16 @@ const cartReducer = (state = initialState, action) => {
     case 'SET_ADDRESS':
       return { ...state, address: action.payload };
 
+    case 'TOGGLE_CART_ITEM':
+      return {
+        ...state,
+        items: state.items.map(item =>
+          item.product.id === action.payload.id
+            ? { ...item, checked: action.payload.checked }
+            : item
+        )
+      };
+
     default:
       return state;
   }
