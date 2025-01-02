@@ -1,70 +1,100 @@
-import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useEffect, useMemo } from 'react';
+import { useParams, useHistory } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProductDetails } from '../redux/actions/productActions';
+import { addToCart } from '../redux/actions/cartActions';
+import { ArrowLeft } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const ProductDetail = () => {
-  const { id } = useParams();
+  const { productId } = useParams();
+  const history = useHistory();
   const dispatch = useDispatch();
-  const product = useSelector(state => 
-    state.items.find(item => item.id === Number(id))
-  );
 
-  if (!product) {
+  // Selector'ı memoize et
+  const { product, loading, error } = useSelector(state => state.products.detail);
+
+  useEffect(() => {
+    if (productId) {
+      dispatch(fetchProductDetails(productId));
+    }
+  }, [dispatch, productId]);
+
+  const handleAddToCart = () => {
+    if (product) {
+      dispatch(addToCart(product));
+      toast.success('Ürün sepete eklendi');
+    }
+  };
+
+  const handleBack = () => {
+    history.goBack();
+  };
+
+  if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-xl font-bold">Ürün bulunamadı</h2>
-        </div>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Mobile View */}
-      <div className="md:hidden">
-        <img 
-          src={product.image} 
-          alt={product.name} 
-          className="w-full h-64 object-cover rounded-lg mb-4"
-        />
-        <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
-        <p className="text-xl font-bold text-blue-600 mb-4">
-          {product.price} TL
-        </p>
-        <p className="text-gray-600 mb-6">{product.description}</p>
-        <button className="w-full bg-blue-500 text-white py-3 rounded-lg">
-          Sepete Ekle
-        </button>
-      </div>
+  if (error) {
+    return <div className="container mx-auto p-4 text-red-600">Hata: {error}</div>;
+  }
 
-      {/* Desktop View */}
-      <div className="hidden md:grid grid-cols-2 gap-8">
+  if (!product) {
+    return <div className="container mx-auto p-4">Ürün bulunamadı</div>;
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <button
+        onClick={handleBack}
+        className="flex items-center text-gray-600 hover:text-gray-800 mb-6"
+      >
+        <ArrowLeft className="w-5 h-5 mr-2" />
+        Geri Dön
+      </button>
+
+      <div className="grid md:grid-cols-2 gap-8">
         <div>
           <img 
-            src={product.image} 
-            alt={product.name} 
-            className="w-full h-96 object-cover rounded-lg"
+            src={product.images?.[0]?.url || '/placeholder.jpg'} 
+            alt={product.name}
+            className="w-full rounded-lg shadow-lg"
           />
-          <div className="grid grid-cols-4 gap-2 mt-4">
-            {product.images?.map((img, index) => (
-              <img 
-                key={index}
-                src={img} 
-                alt={`${product.name} ${index + 1}`}
-                className="w-full h-24 object-cover rounded-lg cursor-pointer"
-              />
-            ))}
-          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-          <p className="text-2xl font-bold text-blue-600 mb-6">
-            {product.price} TL
-          </p>
-          <p className="text-gray-600 mb-8">{product.description}</p>
-          <button className="bg-blue-500 text-white py-3 px-8 rounded-lg hover:bg-blue-600">
-            Sepete Ekle
+        
+        <div className="space-y-4">
+          <h1 className="text-3xl font-bold">{product.name}</h1>
+          <p className="text-gray-600">{product.description}</p>
+          
+          <div className="flex items-center space-x-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {product.price?.toFixed(2)} TL
+            </div>
+            <div className="text-sm text-gray-500">
+              Stok: {product.stock}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <span className="text-yellow-400">★</span>
+            <span>{product.rating?.toFixed(1)}</span>
+            <span>({product.sell_count} satış)</span>
+          </div>
+          
+          <button
+            onClick={handleAddToCart}
+            disabled={product.stock <= 0}
+            className={`w-full md:w-auto px-6 py-3 rounded-md text-white ${
+              product.stock > 0 
+                ? 'bg-blue-600 hover:bg-blue-700' 
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {product.stock > 0 ? 'Sepete Ekle' : 'Stokta Yok'}
           </button>
         </div>
       </div>
