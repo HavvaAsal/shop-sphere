@@ -1,83 +1,86 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import { useSelector } from 'react-redux';
+import AddressForm from '../components/AddressForm';
+import PaymentMethods from '../components/PaymentMethods';
+import OrderSummary from '../components/OrderSummary';
 
 const CheckoutPage = () => {
+  const [step, setStep] = useState(1);
+  const cartItems = useSelector(state => state.cart.items);
+  const selectedAddress = useSelector(state => state.address?.selectedAddress);
+  const selectedCard = useSelector(state => state.cards?.selectedCard);
+
+  const steps = useMemo(() => [
+    { id: 1, title: 'Teslimat Adresi' },
+    { id: 2, title: 'Ödeme Yöntemi' }
+  ], []);
+
+  const handleNext = () => {
+    setStep(current => current + 1);
+  };
+
+  const handleBack = () => {
+    setStep(current => current - 1);
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return <AddressForm onNext={handleNext} />;
+      case 2:
+        return (
+          <PaymentMethods 
+            onNext={handleNext} 
+            onBack={handleBack}
+            selectedAddress={selectedAddress}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Ödeme</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Teslimat Bilgileri */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Teslimat Bilgileri</h2>
-          <form className="space-y-4">
-            <div>
-              <label className="block mb-1">Ad Soyad</label>
-              <input 
-                type="text" 
-                className="w-full border rounded-lg p-2"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-1">Adres</label>
-              <textarea 
-                className="w-full border rounded-lg p-2"
-                rows="3"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-1">Telefon</label>
-              <input 
-                type="tel" 
-                className="w-full border rounded-lg p-2"
-                required
-              />
-            </div>
-          </form>
-        </div>
-
-        {/* Ödeme Bilgileri */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Ödeme Bilgileri</h2>
-          <form className="space-y-4">
-            <div>
-              <label className="block mb-1">Kart Numarası</label>
-              <input 
-                type="text" 
-                className="w-full border rounded-lg p-2"
-                placeholder="1234 5678 9012 3456"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1">Son Kullanma Tarihi</label>
-                <input 
-                  type="text" 
-                  className="w-full border rounded-lg p-2"
-                  placeholder="MM/YY"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block mb-1">CVV</label>
-                <input 
-                  type="text" 
-                  className="w-full border rounded-lg p-2"
-                  placeholder="123"
-                  required
-                />
-              </div>
-            </div>
-            <button 
-              type="submit"
-              className="w-full bg-blue-500 text-white py-2 rounded-lg"
+      {/* Adım göstergesi */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center">
+          {steps.map((s) => (
+            <div 
+              key={s.id}
+              className={`flex-1 text-center ${
+                step === s.id 
+                  ? 'text-blue-600 font-semibold' 
+                  : step > s.id 
+                    ? 'text-green-600' 
+                    : 'text-gray-400'
+              }`}
             >
-              Ödemeyi Tamamla
-            </button>
-          </form>
+              <div className="relative">
+                <div className={`
+                  w-8 h-8 mx-auto rounded-full flex items-center justify-center
+                  ${step === s.id ? 'bg-blue-100 text-blue-600' : 
+                    step > s.id ? 'bg-green-100 text-green-600' : 
+                    'bg-gray-100 text-gray-400'}
+                `}>
+                  {step > s.id ? '✓' : s.id}
+                </div>
+                <div className="mt-2">{s.title}</div>
+                {s.id !== steps.length && (
+                  <div className={`
+                    absolute top-4 -right-1/2 w-full h-0.5
+                    ${step > s.id ? 'bg-green-600' : 'bg-gray-200'}
+                  `} />
+                )}
+              </div>
+            </div>
+          ))}
         </div>
+      </div>
+
+      {/* Adım içeriği */}
+      <div className="max-w-3xl mx-auto">
+        {renderStep()}
       </div>
     </div>
   );
