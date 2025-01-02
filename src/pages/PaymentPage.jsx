@@ -10,18 +10,37 @@ import { toast } from 'react-toastify';
 const PaymentPage = () => {
   const history = useHistory();
   const dispatch = useDispatch();
-  const { cards, loading } = useSelector(state => state.cards);
-  const { items: cartItems } = useSelector(state => state.cart);
-  const selectedAddress = useSelector(state => state.checkout.selectedAddress);
+  const { cards = [] } = useSelector(state => state.cards) || { cards: [] };
+  const { items: cartItems = [] } = useSelector(state => state.cart) || { items: [] };
+  const checkout = useSelector(state => state.checkout) || {};
+  const selectedAddress = checkout.address;
   const [showCardForm, setShowCardForm] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [processing, setProcessing] = useState(false);
 
+  // Debug için
+  console.log('Checkout State:', checkout);
+  console.log('Selected Address:', selectedAddress);
+  console.log('Cart Items:', cartItems);
+
   // Toplam tutarı hesapla
-  const totalAmount = cartItems.reduce((sum, item) => 
-    sum + (item.product.price * item.count), 0
-  );
+  const totalAmount = cartItems.reduce((sum, item) => {
+    const price = item.product?.price || 0;
+    const count = item.count || 0;
+    return sum + (price * count);
+  }, 0);
+
+  useEffect(() => {
+    // Adres kontrolü
+    if (!selectedAddress) {
+      console.log('No address selected, redirecting...');
+      toast.error('Lütfen önce teslimat adresi seçin');
+      history.push('/checkout');
+      return;
+    }
+    dispatch(fetchCards());
+  }, [selectedAddress, history, dispatch]);
 
   const handleCreateOrder = async () => {
     if (!selectedCard || !selectedAddress || cartItems.length === 0) {
@@ -37,20 +56,17 @@ const PaymentPage = () => {
         card_name: selectedCard.name_on_card,
         card_expire_month: selectedCard.expire_month,
         card_expire_year: selectedCard.expire_year,
-        card_ccv: "123", // Güvenlik için gerçek CCV saklanmıyor
+        card_ccv: "123",
         price: totalAmount,
         products: cartItems.map(item => ({
           product_id: item.product.id,
           count: item.count,
-          detail: item.detail || ""
+          detail: `${item.color} - ${item.size}`
         }))
       };
 
       await dispatch(createOrder(orderData));
-      
-      // Başarılı sipariş sonrası ana sayfaya yönlendir
-      history.push('/');
-      toast.success('Siparişiniz başarıyla oluşturuldu! Teşekkür ederiz.');
+      history.push('/orders');
     } catch (error) {
       console.error('Sipariş oluşturma hatası:', error);
       toast.error('Sipariş oluşturulurken bir hata oluştu');
@@ -58,10 +74,6 @@ const PaymentPage = () => {
       setProcessing(false);
     }
   };
-
-  useEffect(() => {
-    dispatch(fetchCards());
-  }, [dispatch]);
 
   const handleAddCard = async (data) => {
     try {
@@ -94,6 +106,10 @@ const PaymentPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Ödeme Bilgileri</h1>
+
+      <div className="mb-4 text-sm text-gray-500">
+        Toplam Tutar: {totalAmount.toFixed(2)} TL
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Kayıtlı Kartlar */}
@@ -161,19 +177,19 @@ const PaymentPage = () => {
             <div className="space-y-4">
               <div className="p-4 border rounded-lg">
                 <h3 className="font-medium mb-2">Tek Çekim</h3>
-                <p className="text-lg font-semibold">8.449,99 TL</p>
+                <p className="text-lg font-semibold">{totalAmount.toFixed(2)} TL</p>
               </div>
               
               <div className="p-4 border rounded-lg">
                 <h3 className="font-medium mb-2">3 Taksit</h3>
-                <p className="text-lg font-semibold">2.816,66 TL x 3</p>
-                <p className="text-sm text-gray-500">Toplam: 8.449,99 TL</p>
+                <p className="text-lg font-semibold">{(totalAmount / 3).toFixed(2)} TL x 3</p>
+                <p className="text-sm text-gray-500">Toplam: {totalAmount.toFixed(2)} TL</p>
               </div>
 
               <div className="p-4 border rounded-lg">
                 <h3 className="font-medium mb-2">6 Taksit</h3>
-                <p className="text-lg font-semibold">1.408,33 TL x 6</p>
-                <p className="text-sm text-gray-500">Toplam: 8.449,99 TL</p>
+                <p className="text-lg font-semibold">{(totalAmount / 6).toFixed(2)} TL x 6</p>
+                <p className="text-sm text-gray-500">Toplam: {totalAmount.toFixed(2)} TL</p>
               </div>
             </div>
           ) : (

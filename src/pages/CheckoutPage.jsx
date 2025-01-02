@@ -1,14 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import AddressForm from '../components/AddressForm';
 import PaymentMethods from '../components/PaymentMethods';
 import OrderSummary from '../components/OrderSummary';
+import { useHistory } from 'react-router-dom';
 
 const CheckoutPage = () => {
   const [step, setStep] = useState(1);
   const cartItems = useSelector(state => state.cart.items);
   const selectedAddress = useSelector(state => state.address?.selectedAddress);
   const selectedCard = useSelector(state => state.cards?.selectedCard);
+  const dispatch = useDispatch();
+  const history = useHistory();
 
   const steps = useMemo(() => [
     { id: 1, title: 'Teslimat Adresi' },
@@ -21,6 +24,15 @@ const CheckoutPage = () => {
 
   const handleBack = () => {
     setStep(current => current - 1);
+  };
+
+  const handleSelectAddress = (address) => {
+    // Redux store'a adresi kaydet
+    dispatch({ type: 'SET_SHIPPING_ADDRESS', payload: address });
+    // Konsola yazdırarak kontrol et
+    console.log('Selected Address:', address);
+    // Ödeme sayfasına yönlendir
+    history.push('/payment');
   };
 
   const renderStep = () => {

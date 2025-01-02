@@ -1,18 +1,18 @@
 import { combineReducers } from 'redux';
-import productReducer from './productReducer';
-import categoryReducer from './categoryReducer';
-import clientReducer from './clientReducer';
 import cartReducer from './cartReducer';
 import addressReducer from './addressReducer';
 import cardReducer from './cardReducer';
+import checkoutReducer from './checkoutReducer';
+import orderReducer from './orderReducer';
+import clientReducer from './clientReducer';
 
 const rootReducer = combineReducers({
-  products: productReducer,
-  categories: categoryReducer,
-  client: clientReducer,
   cart: cartReducer,
   address: addressReducer,
-  cards: cardReducer
+  cards: cardReducer,
+  checkout: checkoutReducer,
+  orders: orderReducer,
+  client: clientReducer
 });
 
 export default rootReducer; 

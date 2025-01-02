@@ -18,7 +18,6 @@ export const fetchCards = () => async (dispatch) => {
     dispatch({ type: FETCH_CARDS_SUCCESS, payload: response.data });
   } catch (error) {
     dispatch({ type: FETCH_CARDS_ERROR, payload: error.message });
-    toast.error('Kartlar yüklenirken bir hata oluştu');
   }
 };
 
@@ -44,7 +43,6 @@ export const addCard = (cardData) => async (dispatch) => {
 
 export const updateCard = (cardData) => async (dispatch) => {
   try {
-    // Backend'in istediği formata dönüştür
     const formattedData = {
       id: cardData.id,
       card_no: cardData.cardNumber.replace(/\s/g, ''),
@@ -52,14 +50,10 @@ export const updateCard = (cardData) => async (dispatch) => {
       expire_year: parseInt(cardData.expiryYear),
       name_on_card: cardData.cardHolder
     };
-
     const response = await api.put('/user/card', formattedData);
     dispatch({ type: UPDATE_CARD_SUCCESS, payload: response.data });
-    toast.success('Kart başarıyla güncellendi');
-    return response.data;
   } catch (error) {
     toast.error('Kart güncellenirken bir hata oluştu');
-    throw error;
   }
 };
 
@@ -67,11 +61,8 @@ export const deleteCard = (cardId) => async (dispatch) => {
   try {
     await api.delete(`/user/card/${cardId}`);
     dispatch({ type: DELETE_CARD_SUCCESS, payload: cardId });
-    toast.success('Kart başarıyla silindi');
-    return true;
   } catch (error) {
     toast.error('Kart silinirken bir hata oluştu');
-    throw error;
   }
 };
 

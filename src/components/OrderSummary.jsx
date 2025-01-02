@@ -12,12 +12,19 @@ const OrderSummary = () => {
       {/* Ürün Listesi */}
       <div className="space-y-3">
         {cartItems.map((item) => (
-          <div key={item.id} className="flex justify-between">
+          <div 
+            key={`${item.product.id}-${item.size}-${item.color}`} 
+            className="flex justify-between"
+          >
             <div>
-              <p className="font-medium">{item.name}</p>
-              <p className="text-sm text-gray-500">Adet: {item.quantity}</p>
+              <p className="font-medium">{item.product.name}</p>
+              <p className="text-sm text-gray-500">
+                {item.count} adet - {item.size} - {item.color}
+              </p>
             </div>
-            <p className="font-medium">{(item.price * item.quantity).toFixed(2)} TL</p>
+            <p className="font-medium">
+              {(item.product.price * item.count).toFixed(2)} TL
+            </p>
           </div>
         ))}
       </div>
