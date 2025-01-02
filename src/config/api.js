@@ -1,23 +1,14 @@
 import axios from 'axios';
 
-export const API_BASE_URL = "https://workintech-fe-ecommerce.onrender.com";
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: 'https://workintech-fe-ecommerce.onrender.com',
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
   }
 });
 
-export const ENDPOINTS = {
-  LOGIN: '/login',
-  SIGNUP: '/signup',
-  VERIFY: '/verify',
-  PRODUCTS: '/products',
-  CATEGORIES: '/categories'
-};
-
-// İstek öncesi token kontrolü
+// Request interceptor - her istekte token'ı ekle
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -31,13 +22,13 @@ api.interceptors.request.use(
   }
 );
 
-// İstek sonrası hata kontrolü
+// Response interceptor - 401 hatası gelirse kullanıcıyı logout yap
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && error.config.url !== '/login') {
+      // Token geçersiz, kullanıcıyı çıkış yaptır
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
