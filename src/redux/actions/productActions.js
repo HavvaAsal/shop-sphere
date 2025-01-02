@@ -10,27 +10,12 @@ export const FETCH_PRODUCT_DETAILS_SUCCESS = 'FETCH_PRODUCT_DETAILS_SUCCESS';
 export const FETCH_PRODUCT_DETAILS_ERROR = 'FETCH_PRODUCT_DETAILS_ERROR';
 
 // Thunk Actions
-export const fetchProducts = (params = {}) => async (dispatch) => {
+export const fetchProducts = ({ queryString = '' }) => async (dispatch) => {
   dispatch({ type: FETCH_PRODUCTS_START });
   try {
-    const response = await api.get('/products', { 
-      params: {
-        limit: params.limit || 25,
-        offset: params.offset || 0,
-        category: params.category || '',
-        sort: params.sort || ''
-      }
-    });
-
-    dispatch({ 
-      type: FETCH_PRODUCTS_SUCCESS, 
-      payload: {
-        products: response.data.products || [],
-        total: response.data.total || 0
-      }
-    });
+    const response = await api.get(`/products?${queryString}`);
+    dispatch({ type: FETCH_PRODUCTS_SUCCESS, payload: response.data });
   } catch (error) {
-    console.error('Ürün getirme hatası:', error);
     dispatch({ type: FETCH_PRODUCTS_ERROR, payload: error.message });
     toast.error('Ürünler yüklenirken bir hata oluştu');
   }

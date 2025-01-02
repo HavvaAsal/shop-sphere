@@ -40,6 +40,7 @@ function App() {
         <Switch>
           <Route exact path="/" component={HomePage} />
           <Route exact path="/shop" component={ShopPage} />
+          <Route path="/shop/:gender/:categoryName/:categoryId" component={ShopPage} />
           <Route path="/shop/:gender/:categoryName/:categoryId/:productNameSlug/:productId" component={ProductDetail} />
           <Route path="/login" component={LoginPage} />
           <Route path="/signup" component={RegisterPage} />
