@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductDetails } from '../redux/actions/productActions';
@@ -11,11 +11,11 @@ const ProductDetail = () => {
   const history = useHistory();
   const dispatch = useDispatch();
 
-  // Selector'ı memoize et
   const { product, loading, error } = useSelector(state => state.products.detail);
 
   useEffect(() => {
     if (productId) {
+      console.log('Fetching product details for ID:', productId);
       dispatch(fetchProductDetails(productId));
     }
   }, [dispatch, productId]);
