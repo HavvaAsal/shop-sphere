@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAddresses, addAddress, updateAddress, deleteAddress, selectAddress } from '../redux/actions/addressActions';
+import { setAddress } from '../redux/actions/cartActions';
 
 const AddressForm = ({ onNext }) => {
   const dispatch = useDispatch();
@@ -17,6 +18,7 @@ const AddressForm = ({ onNext }) => {
     address: ''
   });
   const [editingId, setEditingId] = useState(null);
+  const address = useSelector(state => state.cart.address);
 
   useEffect(() => {
     dispatch(fetchAddresses());
