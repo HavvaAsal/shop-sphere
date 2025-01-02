@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "axios": "^1.7.9",
@@ -33,7 +34,8 @@
     "redux-thunk": "^3.1.0",
     "slick-carousel": "^1.8.1",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "yup": "^1.6.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
