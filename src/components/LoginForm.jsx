@@ -1,116 +1,75 @@
-import React, { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from 'react-redux';
-import { loginUser } from '../redux/actions/clientThunks';
+import { login } from '../redux/actions/clientActions';
 import { toast } from 'react-toastify';
 import { useHistory } from 'react-router-dom';
 
-function LoginForm({ onLogin, onClose }) {
-  const history = useHistory();
-  const [rememberMe, setRememberMe] = useState(false);
+function LoginForm({ email }) {
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: {
+      email: email || '',
+    }
+  });
   const dispatch = useDispatch();
-  
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+  const history = useHistory();
 
-  const submitHandler = async (data) => {
+  const onSubmit = async (data) => {
     try {
-      // Redux thunk'ı kullan
-      await dispatch(loginUser({ ...data, rememberMe }));
-      
-      // Başarılı giriş sonrası
-      if (onLogin) onLogin();
-      if (onClose) onClose();
+      await dispatch(login(data));
+      toast.success('Başarıyla giriş yapıldı');
       history.push('/');
-      
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error(error.response?.data?.message || "Giriş başarısız!");
+      toast.error('Giriş yapılamadı: ' + error.message);
     }
   };
 
   return (
-    <div className="p-4 md:p-6 w-full max-w-md mx-auto">
-      <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6">Giriş Yap</h2>
-      <form onSubmit={handleSubmit(submitHandler)} className="space-y-4">
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
-          </label>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-6 text-center">Giriş Yap</h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Email</label>
           <input
-            id="email"
             type="email"
             {...register("email", { 
               required: "Email gerekli",
               pattern: {
                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: "Geçerli bir email adresi giriniz"
+                message: "Geçersiz email adresi"
               }
             })}
-            className="block w-full px-3 py-2 md:py-2.5 text-sm md:text-base border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Email adresiniz"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
           {errors.email && (
             <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
           )}
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="password" className="block text-sm font-medium mb-1">
-            Şifre
-          </label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Şifre</label>
           <input
-            id="password"
             type="password"
             {...register("password", { 
               required: "Şifre gerekli",
               minLength: {
                 value: 6,
-                message: "Şifre en az 6 karakter olmalıdır"
+                message: "Şifre en az 6 karakter olmalı"
               }
             })}
-            className="block w-full px-3 py-2 md:py-2.5 text-sm md:text-base border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Şifreniz"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
           {errors.password && (
             <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
           )}
         </div>
 
-        {/* Remember Me Checkbox */}
-        <div className="flex items-center mb-4">
-          <input
-            type="checkbox"
-            id="rememberMe"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
-            Beni Hatırla
-          </label>
-        </div>
-
-        {/* Butonlar için container */}
-        <div className="flex space-x-4">
-          <button
-            type="submit"
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Giriş Yap
-          </button>
-          
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
-          >
-            İptal
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Giriş Yap
+        </button>
       </form>
     </div>
   );

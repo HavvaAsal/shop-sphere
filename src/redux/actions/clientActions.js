@@ -1,69 +1,90 @@
-import axios from 'axios';
-import { ENDPOINTS } from '../../config/api';
+import api from '../../config/api';
 import { toast } from 'react-toastify';
 
 // Action Types
-export const SET_USER = 'SET_USER';
-export const SET_ROLES = 'SET_ROLES';
 export const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
 export const LOGIN_FAILURE = 'LOGIN_FAILURE';
-export const SIGNUP_SUCCESS = 'SIGNUP_SUCCESS';
-export const SIGNUP_FAILURE = 'SIGNUP_FAILURE';
 export const LOGOUT = 'LOGOUT';
-
-// Action Creators
-export const setUser = (user) => ({
-  type: SET_USER,
-  payload: user
-});
-
-export const setRoles = (roles) => ({
-  type: SET_ROLES,
-  payload: roles
-});
+export const VERIFY_TOKEN_SUCCESS = 'VERIFY_TOKEN_SUCCESS';
+export const VERIFY_TOKEN_FAILURE = 'VERIFY_TOKEN_FAILURE';
 
 // Thunk Actions
-export const loginUser = (data) => async (dispatch) => {
+export const login = (credentials) => async (dispatch) => {
   try {
-    const response = await axios.post(ENDPOINTS.LOGIN, data);
-    const { token, user } = response.data;
-
+    const response = await api.post('/login', credentials);
+    const { token } = response.data;
+    
     // Token'ı localStorage'a kaydet
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    
+    // Token'ı api instance header'ına ekle
+    api.defaults.headers.common['Authorization'] = token;
+    
+    // Kullanıcı bilgilerini al
+    const userResponse = await api.get('/verify');
+    
+    dispatch({
+      type: 'LOGIN_SUCCESS',
+      payload: {
+        token,
+        user: userResponse.data
+      }
+    });
 
-    dispatch({ type: LOGIN_SUCCESS, payload: user });
-    toast.success('Başarıyla giriş yapıldı!');
+    return response.data;
   } catch (error) {
-    dispatch({ type: LOGIN_FAILURE, payload: error.message });
-    toast.error(error.response?.data?.message || 'Giriş başarısız');
+    throw error;
   }
 };
 
-export const signupUser = (data) => async (dispatch) => {
+export const register = (userData) => async (dispatch) => {
   try {
-    const response = await axios.post(ENDPOINTS.SIGNUP, data);
-    dispatch({ type: SIGNUP_SUCCESS, payload: response.data });
-    toast.success('Kayıt başarılı! Email aktivasyonunuzu tamamlayın.');
+    const response = await api.post('/signup', userData);
+    const { token, ...user } = response.data;
+    
+    localStorage.setItem('token', token);
+    api.defaults.headers.common['Authorization'] = token;
+    
+    dispatch({ type: LOGIN_SUCCESS, payload: user });
+    toast.success('Başarıyla kayıt olundu');
+    return response.data;
   } catch (error) {
-    dispatch({ type: SIGNUP_FAILURE, payload: error.message });
-    toast.error(error.response?.data?.message || 'Kayıt başarısız');
+    toast.error('Kayıt olurken bir hata oluştu');
+    throw error;
+  }
+};
+
+export const verifyToken = () => async (dispatch) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No token found');
+    }
+
+    // Token'ı api instance header'ına ekle
+    api.defaults.headers.common['Authorization'] = token;
+    
+    const response = await api.get('/verify');
+    
+    dispatch({
+      type: 'LOGIN_SUCCESS',
+      payload: {
+        token,
+        user: response.data
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    localStorage.removeItem('token');
+    dispatch({ type: 'LOGOUT' });
+    throw error;
   }
 };
 
 export const logout = () => (dispatch) => {
   localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  delete api.defaults.headers.common['Authorization'];
   dispatch({ type: LOGOUT });
   toast.success('Başarıyla çıkış yapıldı');
-};
-
-export const fetchRolesIfNeeded = () => (dispatch, getState) => {
-  const { roles } = getState().client;
-  if (roles.length === 0) {
-    return axios.get(ENDPOINTS.ROLES)
-      .then(response => dispatch(setRoles(response.data)))
-      .catch(error => console.error('Error fetching roles:', error));
-  }
-  return Promise.resolve();
 };
