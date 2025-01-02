@@ -12,22 +12,26 @@ export const VERIFY_TOKEN_FAILURE = 'VERIFY_TOKEN_FAILURE';
 export const login = (credentials) => async (dispatch) => {
   try {
     const response = await api.post('/login', credentials);
+    const { token, user } = response.data;
     
-    // Remember me seçili ise token'ı localStorage'a kaydet
+    // Remember me durumuna göre token'ı kaydet
     if (credentials.rememberMe) {
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('token', token);
     } else {
-      // Seçili değilse sessionStorage'a kaydet
-      sessionStorage.setItem('token', response.data.token);
+      sessionStorage.setItem('token', token);
     }
 
+    // Axios header'ını güncelle
+    api.defaults.headers.common['Authorization'] = token;
+
     dispatch({ 
-      type: 'LOGIN_SUCCESS', 
-      payload: response.data 
+      type: LOGIN_SUCCESS, 
+      payload: { token, user } 
     });
 
     return response.data;
   } catch (error) {
+    dispatch({ type: LOGIN_FAILURE });
     throw error;
   }
 };
@@ -51,18 +55,22 @@ export const register = (userData) => async (dispatch) => {
 
 export const verifyToken = () => async (dispatch) => {
   try {
-    const token = localStorage.getItem('token');
+    // Önce localStorage'dan token'ı kontrol et
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    
     if (!token) {
-      throw new Error('No token found');
+      throw new Error('Token bulunamadı');
     }
 
-    // Token'ı api instance header'ına ekle
+    // Token'ı axios header'ına ekle (Bearer prefix'i olmadan)
     api.defaults.headers.common['Authorization'] = token;
     
+    // Token'ı doğrula
     const response = await api.get('/verify');
     
+    // Başarılı doğrulama - kullanıcı bilgilerini güncelle
     dispatch({
-      type: 'LOGIN_SUCCESS',
+      type: LOGIN_SUCCESS,
       payload: {
         token,
         user: response.data
@@ -71,14 +79,19 @@ export const verifyToken = () => async (dispatch) => {
 
     return response.data;
   } catch (error) {
+    // Token geçersiz - temizlik yap
     localStorage.removeItem('token');
-    dispatch({ type: 'LOGOUT' });
+    sessionStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    dispatch({ type: LOGOUT });
     throw error;
   }
 };
 
 export const logout = () => (dispatch) => {
+  // Tüm token'ları temizle
   localStorage.removeItem('token');
+  sessionStorage.removeItem('token');
   delete api.defaults.headers.common['Authorization'];
   dispatch({ type: LOGOUT });
   toast.success('Başarıyla çıkış yapıldı');

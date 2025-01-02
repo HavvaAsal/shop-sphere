@@ -20,10 +20,16 @@ function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      dispatch(verifyToken());
-    }
+    // Uygulama başlangıcında token kontrolü
+    const initializeAuth = async () => {
+      try {
+        await dispatch(verifyToken());
+      } catch (error) {
+        console.log('Token doğrulanamadı veya bulunamadı');
+      }
+    };
+
+    initializeAuth();
   }, [dispatch]);
 
   return (
