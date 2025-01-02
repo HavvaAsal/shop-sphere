@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { login } from '../redux/actions/clientActions';
 import { toast } from 'react-toastify';
 import { useHistory } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 function LoginForm({ email }) {
   const { register, handleSubmit, formState: { errors } } = useForm({
@@ -27,7 +28,7 @@ function LoginForm({ email }) {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6 text-center">Giriş Yap</h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700">Email</label>
           <input
@@ -62,6 +63,32 @@ function LoginForm({ email }) {
           {errors.password && (
             <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
           )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="remember-me"
+              {...register("rememberMe")}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+            />
+            <label 
+              htmlFor="remember-me" 
+              className="ml-2 block text-sm text-gray-700 cursor-pointer select-none"
+            >
+              Beni Hatırla
+            </label>
+          </div>
+
+          <div className="text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Şifremi Unuttum
+            </Link>
+          </div>
         </div>
 
         <button

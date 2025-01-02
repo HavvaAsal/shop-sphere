@@ -12,23 +12,18 @@ export const VERIFY_TOKEN_FAILURE = 'VERIFY_TOKEN_FAILURE';
 export const login = (credentials) => async (dispatch) => {
   try {
     const response = await api.post('/login', credentials);
-    const { token } = response.data;
     
-    // Token'ı localStorage'a kaydet
-    localStorage.setItem('token', token);
-    
-    // Token'ı api instance header'ına ekle
-    api.defaults.headers.common['Authorization'] = token;
-    
-    // Kullanıcı bilgilerini al
-    const userResponse = await api.get('/verify');
-    
-    dispatch({
-      type: 'LOGIN_SUCCESS',
-      payload: {
-        token,
-        user: userResponse.data
-      }
+    // Remember me seçili ise token'ı localStorage'a kaydet
+    if (credentials.rememberMe) {
+      localStorage.setItem('token', response.data.token);
+    } else {
+      // Seçili değilse sessionStorage'a kaydet
+      sessionStorage.setItem('token', response.data.token);
+    }
+
+    dispatch({ 
+      type: 'LOGIN_SUCCESS', 
+      payload: response.data 
     });
 
     return response.data;
