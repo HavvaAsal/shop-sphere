@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Search, ShoppingCart, Menu, X } from "lucide-react";
+import { User, Search, ShoppingCart, Menu, X, ChevronDown } from "lucide-react";
 import SignupForm from "../components/SignUpForm";
 import LoginForm from "../components/LoginForm";
 import Gravatar from "react-gravatar";
@@ -7,8 +7,51 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useHistory, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../redux/actions/clientThunks';
+import { logout } from '../redux/actions/clientActions';
 import { fetchCategories } from '../redux/actions/categoryActions';
+
+const ProfileMenu = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const history = useHistory();
+  const dispatch = useDispatch();
+  const { user } = useSelector(state => state.client);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center space-x-2"
+      >
+        {user?.email && <Gravatar email={user.email} size={32} className="rounded-full" />}
+        <ChevronDown className="h-4 w-4" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+          <div className="px-4 py-2 text-sm text-gray-700 border-b">
+            {user?.email}
+          </div>
+          <Link
+            to="/orders"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => setIsOpen(false)}
+          >
+            Siparişlerim
+          </Link>
+          <button
+            onClick={() => {
+              dispatch(logout());
+              setIsOpen(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Çıkış Yap
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 function Header() {
   const history = useHistory();
@@ -48,7 +91,11 @@ function Header() {
     setModalOpen(true);
   };
 
-  const closeModal = () => setModalOpen(false);
+  const closeModal = () => {
+    setModalOpen(false);
+    setLoginMode(true); // Reset to login mode when closing
+  };
+
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
   const handleLogout = () => {
@@ -68,37 +115,22 @@ function Header() {
 
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                {user?.email && (
-                  <Gravatar 
-                    email={user.email} 
-                    size={32} 
-                    className="rounded-full"
-                  />
-                )}
-                <span className="text-gray-700">{user?.name}</span>
-                <button 
-                  onClick={handleLogout}
-                  className="text-gray-600 hover:text-gray-800"
-                >
-                  Çıkış Yap
-                </button>
-              </div>
+              <ProfileMenu />
             ) : (
               <div className="flex items-center space-x-4">
                 <button 
                   onClick={() => openModal("login")}
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
                 >
-                  <User className="w-6 h-6" />
+                  <User className="w-5 h-5" />
                   <span>Giriş Yap</span>
                 </button>
-                <Link 
-                  to="/signup"
-                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
+                <button 
+                  onClick={() => openModal("signup")}
+                  className="text-blue-600 hover:text-blue-800"
                 >
-                  <span>Kayıt Ol</span>
-                </Link>
+                  Kayıt Ol
+                </button>
               </div>
             )}
             
@@ -193,14 +225,14 @@ function Header() {
                                   {cats.map(category => (
                                     <Link
                                       key={category.id}
-                                      to={`/shop/${gender}/${category.name?.toLowerCase()}/${category.id}`}
+                                      to={`/shop/${category.gender === 'k' ? 'kadin' : 'erkek'}/${category.code}/${category.id}`}
                                       className="group"
                                       onClick={() => setIsShopDropdownOpen(false)}
                                     >
                                       <div className="aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100">
                                         <img
-                                          src={category.image || `/images/placeholder.jpg`}
-                                          alt={category.name || 'Kategori'}
+                                          src={category.img}
+                                          alt={category.title}
                                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                           onError={(e) => {
                                             e.target.src = '/images/placeholder.jpg';
@@ -208,7 +240,7 @@ function Header() {
                                         />
                                       </div>
                                       <h4 className="text-sm font-medium group-hover:text-blue-600 transition-colors">
-                                        {category.name || 'Kategori'}
+                                        {category.title}
                                       </h4>
                                       {category.rating && (
                                         <p className="text-xs text-gray-500 mt-1">
@@ -253,12 +285,43 @@ function Header() {
         {/* Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  {isLoginMode ? 'Giriş Yap' : 'Kayıt Ol'}
+                </h2>
+                <button 
+                  onClick={closeModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
               {isLoginMode ? (
-                <LoginForm onClose={closeModal} />
+                <LoginForm 
+                  onSuccess={() => {
+                    closeModal();
+                    history.push('/');
+                  }} 
+                />
               ) : (
-                <SignupForm onClose={closeModal} />
+                <SignupForm 
+                  onSuccess={() => {
+                    closeModal();
+                    history.push('/');
+                  }}
+                />
               )}
+
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => setLoginMode(!isLoginMode)}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  {isLoginMode ? 'Hesabınız yok mu? Kayıt olun' : 'Zaten üye misiniz? Giriş yapın'}
+                </button>
+              </div>
             </div>
           </div>
         )}
