@@ -13,10 +13,11 @@ export const fetchCategories = () => async (dispatch) => {
   try {
     const response = await api.get('/categories');
     dispatch({ type: FETCH_CATEGORIES_SUCCESS, payload: response.data });
+    return response.data;
   } catch (error) {
-    console.error('Kategori getirme hatası:', error);
-    dispatch({ type: FETCH_CATEGORIES_ERROR, payload: error.message });
+    dispatch({ type: FETCH_CATEGORIES_ERROR });
     toast.error('Kategoriler yüklenirken bir hata oluştu');
+    throw error;
   }
 };
 

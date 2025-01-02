@@ -1,36 +1,32 @@
+import {
+  FETCH_CATEGORIES_START,
+  FETCH_CATEGORIES_SUCCESS,
+  FETCH_CATEGORIES_ERROR
+} from '../actions/categoryActions';
+
 const initialState = {
   items: [],
   loading: false,
-  error: null,
-  topCategories: []
+  error: null
 };
 
-const categoryReducer = (state = initialState, action) => {
+export default function categoryReducer(state = initialState, action) {
   switch (action.type) {
-    case 'FETCH_CATEGORIES_START':
-      return {
-        ...state,
-        loading: true,
-        error: null
-      };
-    case 'FETCH_CATEGORIES_SUCCESS':
-      return {
-        ...state,
-        loading: false,
+    case FETCH_CATEGORIES_START:
+      return { ...state, loading: true };
+    case FETCH_CATEGORIES_SUCCESS:
+      return { 
+        ...state, 
         items: action.payload,
-        topCategories: action.payload
-          .sort((a, b) => b.rating - a.rating)
-          .slice(0, 5)
+        loading: false 
       };
-    case 'FETCH_CATEGORIES_ERROR':
-      return {
-        ...state,
+    case FETCH_CATEGORIES_ERROR:
+      return { 
+        ...state, 
         loading: false,
-        error: action.payload
+        error: action.payload 
       };
     default:
       return state;
   }
-};
-
-export default categoryReducer; 
+} 

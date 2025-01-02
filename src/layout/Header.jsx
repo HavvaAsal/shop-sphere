@@ -9,6 +9,7 @@ import { useHistory, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/actions/clientActions';
 import { fetchCategories } from '../redux/actions/categoryActions';
+import CategoryDropdown from '../components/CategoryDropdown';
 
 const ProfileMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,281 +54,135 @@ const ProfileMenu = () => {
   );
 };
 
-function Header() {
-  const history = useHistory();
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [isLoginMode, setLoginMode] = useState(true);
-  const [isMenuOpen, setMenuOpen] = useState(false);
-  const { user, isAuthenticated } = useSelector(state => state.client);
-  const dispatch = useDispatch();
+const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
-  const categories = useSelector(state => state.categories.items);
-  
+
+  const dispatch = useDispatch();
+  const history = useHistory();
+  const { user } = useSelector(state => state.client);
+  const cartItemCount = useSelector(state => state.cart.items.length);
+
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
-  const groupedCategories = categories?.reduce((acc, category) => {
-    if (!category?.gender || !category?.name) return acc;
-    
-    if (!acc[category.gender]) {
-      acc[category.gender] = [];
-    }
-    acc[category.gender].push(category);
-    return acc;
-  }, {}) || {};
-
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Shop', path: '/shop' },
-    { name: 'About', path: '/about' },
-    { name: 'Blog', path: '/blog' },
-    { name: 'Contact', path: '/contact' },
-    { name: 'Pages', path: '/pages' }
-  ];
-
-  const openModal = (mode) => {
-    setLoginMode(mode === "login");
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setLoginMode(true); // Reset to login mode when closing
-  };
-
-  const toggleMenu = () => setMenuOpen((prev) => !prev);
-
-  const handleLogout = () => {
-    dispatch(logout());
-    history.push('/');
-  };
-
   return (
-    <header className="bg-white shadow-md relative z-40">
-      <ToastContainer position="top-right" autoClose={3000} />
-      
-      <div className="container mx-auto">
-        <div className="flex justify-between items-center px-4 py-3">
+    <header className="bg-white shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           <Link to="/" className="text-2xl font-bold">
             Bandage
           </Link>
 
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link to="/" className="hover:text-blue-600">
+              Home
+            </Link>
+
+            <div className="relative group">
+              <div className="flex items-center space-x-1">
+                <Link to="/shop" className="hover:text-blue-600">
+                  Shop
+                </Link>
+                <button
+                  onClick={() => setIsShopDropdownOpen(!isShopDropdownOpen)}
+                  className="hover:text-blue-600 focus:outline-none p-1"
+                >
+                  <ChevronDown 
+                    className={`w-4 h-4 transition-transform ${
+                      isShopDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+              <CategoryDropdown isOpen={isShopDropdownOpen} />
+            </div>
+
+            <Link to="/about" className="hover:text-blue-600">
+              About
+            </Link>
+            <Link to="/blog" className="hover:text-blue-600">
+              Blog
+            </Link>
+            <Link to="/contact" className="hover:text-blue-600">
+              Contact
+            </Link>
+          </nav>
+
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
+            {user ? (
               <ProfileMenu />
             ) : (
               <div className="flex items-center space-x-4">
-                <button 
-                  onClick={() => openModal("login")}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+                <button
+                  onClick={() => setShowLogin(true)}
+                  className="hover:text-blue-600"
                 >
-                  <User className="w-5 h-5" />
-                  <span>Giriş Yap</span>
-                </button>
-                <button 
-                  onClick={() => openModal("signup")}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  Kayıt Ol
+                  <User className="h-6 w-6" />
                 </button>
               </div>
             )}
-            
-            <button className="text-gray-600 hover:text-gray-800">
-              <Search className="w-6 h-6" />
-            </button>
-            
-            <Link 
-              to="/cart"
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <ShoppingCart className="w-6 h-6" />
+
+            <Link to="/cart" className="relative hover:text-blue-600">
+              <ShoppingCart className="h-6 w-6" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartItemCount}
+                </span>
+              )}
             </Link>
-            
-            <button 
-              className="md:hidden text-gray-600 hover:text-gray-800"
-              onClick={toggleMenu}
-            >
-              <Menu className="w-6 h-6" />
+          </div>
+
+          <div className="md:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X /> : <Menu />}
             </button>
           </div>
         </div>
 
-        {/* Navigation Links - Mobile Menu */}
         {isMenuOpen && (
-          <nav className="md:hidden fixed inset-0 bg-white z-50">
-            <div className="flex flex-col h-full">
-              <div className="flex justify-between items-center p-4 border-b">
-                <Link to="/" className="text-2xl font-bold">
-                  Bandage
-                </Link>
-                <button 
-                  onClick={toggleMenu}
-                  className="text-gray-600 hover:text-gray-800"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <ul className="flex-1 flex flex-col items-center justify-center space-y-6 py-4">
-                {navLinks.map((link) => (
-                  <li key={link.name}>
-                    <Link 
-                      to={link.path}
-                      className="text-xl text-gray-600 hover:text-gray-900"
-                      onClick={toggleMenu}
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
-        )}
-
-        {/* Navigation Links - Desktop */}
-        <nav className="hidden md:block border-t border-gray-200">
-          <ul className="flex justify-center items-center space-x-8 py-4">
-            {navLinks.map((link) => {
-              if (link.name === 'Shop') {
-                return (
-                  <li 
-                    key={link.name}
-                    className="relative"
-                    onMouseEnter={() => setIsShopDropdownOpen(true)}
-                    onMouseLeave={() => setIsShopDropdownOpen(false)}
-                  >
-                    <Link 
-                      to="/shop"
-                      className="text-gray-600 hover:text-gray-900 py-2"
-                    >
-                      Shop
-                    </Link>
-                    
-                    {/* Dropdown Menu */}
-                    {isShopDropdownOpen && Object.keys(groupedCategories).length > 0 && (
-                      <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-[800px] bg-white border rounded-lg shadow-lg z-50">
-                        <div className="p-8">
-                          <div className="grid grid-cols-2 gap-8">
-                            {Object.entries(groupedCategories).map(([gender, cats]) => (
-                              <div key={gender} className="space-y-6">
-                                {/* Cinsiyet Başlığı */}
-                                <div className="border-b pb-2">
-                                  <h3 className="text-xl font-bold capitalize">
-                                    {gender === 'kadin' ? 'Kadın' : 'Erkek'}
-                                  </h3>
-                                </div>
-
-                                {/* Kategori Grid */}
-                                <div className="grid grid-cols-2 gap-6">
-                                  {cats.map(category => (
-                                    <Link
-                                      key={category.id}
-                                      to={`/shop/${category.gender === 'k' ? 'kadin' : 'erkek'}/${category.code}/${category.id}`}
-                                      className="group"
-                                      onClick={() => setIsShopDropdownOpen(false)}
-                                    >
-                                      <div className="aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100">
-                                        <img
-                                          src={category.img}
-                                          alt={category.title}
-                                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                          onError={(e) => {
-                                            e.target.src = '/images/placeholder.jpg';
-                                          }}
-                                        />
-                                      </div>
-                                      <h4 className="text-sm font-medium group-hover:text-blue-600 transition-colors">
-                                        {category.title}
-                                      </h4>
-                                      {category.rating && (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          {category.rating} ★
-                                        </p>
-                                      )}
-                                    </Link>
-                                  ))}
-                                </div>
-
-                                {/* Tümünü Gör Linki */}
-                                <Link 
-                                  to={`/shop/${gender}`}
-                                  className="inline-block text-sm text-blue-600 hover:text-blue-800 font-medium"
-                                  onClick={() => setIsShopDropdownOpen(false)}
-                                >
-                                  Tümünü Gör →
-                                </Link>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                );
-              }
-              return (
-                <li key={link.name}>
-                  <Link
-                    to={link.path}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        {/* Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">
-                  {isLoginMode ? 'Giriş Yap' : 'Kayıt Ol'}
-                </h2>
-                <button 
-                  onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              
-              {isLoginMode ? (
-                <LoginForm 
-                  onSuccess={() => {
-                    closeModal();
-                    history.push('/');
-                  }} 
-                />
-              ) : (
-                <SignupForm 
-                  onSuccess={() => {
-                    closeModal();
-                    history.push('/');
-                  }}
-                />
-              )}
-
-              <div className="mt-4 text-center">
-                <button
-                  onClick={() => setLoginMode(!isLoginMode)}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  {isLoginMode ? 'Hesabınız yok mu? Kayıt olun' : 'Zaten üye misiniz? Giriş yapın'}
-                </button>
-              </div>
-            </div>
+          <div className="md:hidden py-4">
+            <Link to="/" className="block py-2">
+              Home
+            </Link>
+            <Link to="/shop" className="block py-2">
+              Shop
+            </Link>
+            <Link to="/about" className="block py-2">
+              About
+            </Link>
+            <Link to="/blog" className="block py-2">
+              Blog
+            </Link>
+            <Link to="/contact" className="block py-2">
+              Contact
+            </Link>
           </div>
         )}
       </div>
+
+      {showLogin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <LoginForm onClose={() => setShowLogin(false)} />
+          </div>
+        </div>
+      )}
+
+      {showSignup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <SignupForm onClose={() => setShowSignup(false)} />
+          </div>
+        </div>
+      )}
+
+      <ToastContainer />
     </header>
   );
-}
+};
 
 export default Header;
