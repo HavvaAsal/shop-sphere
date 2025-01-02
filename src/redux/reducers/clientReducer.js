@@ -1,11 +1,9 @@
 const initialState = {
   user: null,
-  isAuthenticated: false,
+  token: localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem('token'),
   loading: false,
-  error: null,
-  roles: [],
-  theme: 'light',
-  language: 'en'
+  error: null
 };
 
 const clientReducer = (state = initialState, action) => {
@@ -13,31 +11,45 @@ const clientReducer = (state = initialState, action) => {
     case 'LOGIN_SUCCESS':
       return {
         ...state,
-        user: action.payload,
         isAuthenticated: true,
+        user: action.payload.user,
+        token: action.payload.token,
         loading: false,
         error: null
       };
-    case 'AUTH_ERROR':
-    case 'LOGOUT':
+
+    case 'LOGIN_FAILURE':
+      localStorage.removeItem('token');
       return {
         ...state,
-        user: null,
         isAuthenticated: false,
-        loading: false
+        user: null,
+        token: null,
+        loading: false,
+        error: action.payload
       };
-    case 'SET_USER':
-      return { ...state, user: action.payload };
-    case 'SET_ROLES':
-      return { ...state, roles: action.payload };
-    case 'SET_THEME':
-      return { ...state, theme: action.payload };
-    case 'SET_LANGUAGE':
-      return { ...state, language: action.payload };
-    case 'SIGNUP_SUCCESS':
-      return { ...state, user: action.payload };
-    case 'SIGNUP_FAILURE':
-      return { ...state, error: action.payload };
+
+    case 'LOGOUT':
+      localStorage.removeItem('token');
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        loading: false,
+        error: null
+      };
+
+    case 'AUTH_ERROR':
+      localStorage.removeItem('token');
+      return {
+        ...state,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        loading: false,
+        error: 'Authentication error'
+      };
 
     default:
       return state;
