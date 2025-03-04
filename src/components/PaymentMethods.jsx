@@ -9,7 +9,7 @@ import { useHistory } from 'react-router-dom';
 const PaymentMethods = ({ onNext }) => {
   const dispatch = useDispatch();
   const history = useHistory();
-  const selectedCard = useSelector(state => state.cards.selectedCard);
+  const [selectedCard, setSelectedCard] = useState(null);
   const cartItems = useSelector(state => state.cart.items);
   
   // Memoized selectors
@@ -91,19 +91,17 @@ const PaymentMethods = ({ onNext }) => {
   };
 
   const handleCompleteOrder = async () => {
-    try {
-      const response = await api.post('/order', {
-        card_id: selectedCard.id,
-        items: cartItems.map(item => ({
-          product_id: item.id,
-          count: item.quantity
-        }))
-      });
+    if (!selectedCard) {
+      toast.error('Lütfen bir kart seçin');
+      return;
+    }
 
-      toast.success('Siparişiniz başarıyla alındı!');
-      dispatch({ type: 'CLEAR_CART' }); // Sepeti temizle
-      history.push('/orders'); // Siparişler sayfasına yönlendir
+    try {
+      // Siparişi tamamla ve orders sayfasına yönlendir
+      await onNext();
+      history.push('/orders');
     } catch (error) {
+      console.error('Sipariş tamamlama hatası:', error);
       toast.error('Sipariş oluşturulurken bir hata oluştu');
     }
   };
@@ -174,59 +172,41 @@ const PaymentMethods = ({ onNext }) => {
                 {cards.map(card => (
                   <div 
                     key={card.id}
-                    className={`relative p-6 rounded-xl text-gray-800 shadow-lg border ${
-                      card.selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    className={`p-4 border rounded-lg mb-4 cursor-pointer ${
+                      selectedCard?.id === card.id ? 'border-blue-500 bg-blue-50' : ''
                     }`}
+                    onClick={() => setSelectedCard(card)}
                   >
-                    <div className="absolute top-4 right-4 space-x-2">
-                      <button
-                        onClick={() => handleDelete(card.id)}
-                        className="p-1 hover:bg-red-100 rounded-full transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
-                    
-                    <div className="mb-4 flex items-center space-x-2">
-                      {/* Kart tipi ikonları */}
-                      {card.card_no.startsWith('4') && (
-                        <img src="/visa.png" alt="Visa" className="h-8" />
-                      )}
-                      {card.card_no.startsWith('5') && (
-                        <img src="/mastercard.png" alt="Mastercard" className="h-8" />
-                      )}
-                      <CreditCard className="w-6 h-6 text-gray-600" />
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="text-lg tracking-wider font-mono">
-                        {card.card_no.startsWith('4') ? `Visa **** **** ${card.card_no.slice(-4)}` : card.card_no.startsWith('5') ? `MasterCard **** **** ${card.card_no.slice(-4)}` : card.card_no.startsWith('34') || card.card_no.startsWith('37') ? `American Express **** **** ${card.card_no.slice(-4)}` : 'Kart numarası yok'}
-                      </div>
-                      
-                      <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="w-8 h-8 text-gray-600" />
                         <div>
-                          <div className="text-xs text-gray-500">Kart Sahibi</div>
-                          <div className="font-medium">{card.name_on_card}</div>
+                          <h3 className="font-medium">{card.name_on_card}</h3>
+                          <p className="text-sm text-gray-600">
+                            **** **** **** {card.card_no?.slice(-4)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Son Kullanma: {card.expire_month}/{card.expire_year}
+                          </p>
                         </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Son Kullanma</div>
-                          <div className="font-medium">
-                            {String(card.expire_month).padStart(2, '0')}/{card.expire_year}
-                          </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        {/* Kart tipi kontrolü */}
+                        <div className="mb-4 flex items-center space-x-2">
+                          {card.card_no && (
+                            <>
+                              {card.card_no.startsWith('4') && (
+                                <img src="/visa.png" alt="Visa" className="h-8" />
+                              )}
+                              {card.card_no.startsWith('5') && (
+                                <img src="/mastercard.png" alt="Mastercard" className="h-8" />
+                              )}
+                            </>
+                          )}
+                          <CreditCard className="w-6 h-6 text-gray-600" />
                         </div>
                       </div>
                     </div>
-
-                    <button
-                      onClick={() => handleSelect(card)}
-                      className={`mt-4 w-full py-2 rounded-lg transition-colors ${
-                        card.selected
-                          ? 'bg-blue-600 text-white hover:bg-blue-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {card.selected ? 'Seçili Kart' : 'Bu Kartı Kullan'}
-                    </button>
                   </div>
                 ))}
 
@@ -240,47 +220,60 @@ const PaymentMethods = ({ onNext }) => {
             )}
           </div>
 
-          {/* Taksit Seçenekleri */}
-          {!showForm && cards.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-md font-medium">Taksit Seçenekleri</h3>
-              <p className="text-sm text-gray-600">Kartınıza uygun taksit seçeneğini seçiniz</p>
-              
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Taksit Sayısı</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Aylık Ödeme</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {installmentOptions.map((option) => (
-                      <tr 
-                        key={option.value}
-                        className={`cursor-pointer hover:bg-gray-50 ${
-                          selectedInstallment === option.value ? 'bg-blue-50' : ''
-                        }`}
-                        onClick={() => setSelectedInstallment(option.value)}
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center">
-                            <input
-                              type="radio"
-                              checked={selectedInstallment === option.value}
-                              onChange={() => setSelectedInstallment(option.value)}
-                              className="h-4 w-4 text-blue-600"
-                            />
-                            <span className="ml-3">{option.label}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium">
-                          {option.amount.toFixed(2)} TL
-                        </td>
+          {/* Taksit Seçenekleri ve Sipariş Tamamlama Butonu */}
+          {selectedCard && !showForm && (
+            <div className="space-y-6">
+              {/* Taksit seçenekleri */}
+              <div className="space-y-4">
+                <h3 className="text-md font-medium">Taksit Seçenekleri</h3>
+                <p className="text-sm text-gray-600">Kartınıza uygun taksit seçeneğini seçiniz</p>
+                
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Taksit Sayısı</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Aylık Ödeme</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {installmentOptions.map((option) => (
+                        <tr 
+                          key={option.value}
+                          className={`cursor-pointer hover:bg-gray-50 ${
+                            selectedInstallment === option.value ? 'bg-blue-50' : ''
+                          }`}
+                          onClick={() => setSelectedInstallment(option.value)}
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                checked={selectedInstallment === option.value}
+                                onChange={() => setSelectedInstallment(option.value)}
+                                className="h-4 w-4 text-blue-600"
+                              />
+                              <span className="ml-3">{option.label}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium">
+                            {option.amount.toFixed(2)} TL
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Sipariş Tamamlama Butonu */}
+              <div className="mt-6">
+                <button
+                  onClick={handleCompleteOrder}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Siparişi Tamamla
+                </button>
               </div>
             </div>
           )}

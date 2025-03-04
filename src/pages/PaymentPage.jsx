@@ -14,15 +14,8 @@ const PaymentPage = () => {
   const { items: cartItems = [] } = useSelector(state => state.cart) || { items: [] };
   const checkout = useSelector(state => state.checkout) || {};
   const selectedAddress = checkout.address;
-  const [showCardForm, setShowCardForm] = useState(false);
-  const [editingCard, setEditingCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [processing, setProcessing] = useState(false);
-
-  // Debug için
-  console.log('Checkout State:', checkout);
-  console.log('Selected Address:', selectedAddress);
-  console.log('Cart Items:', cartItems);
 
   // Toplam tutarı hesapla
   const totalAmount = cartItems.reduce((sum, item) => {
@@ -30,17 +23,6 @@ const PaymentPage = () => {
     const count = item.count || 0;
     return sum + (price * count);
   }, 0);
-
-  useEffect(() => {
-    // Adres kontrolü
-    if (!selectedAddress) {
-      console.log('No address selected, redirecting...');
-      toast.error('Lütfen önce teslimat adresi seçin');
-      history.push('/checkout');
-      return;
-    }
-    dispatch(fetchCards());
-  }, [selectedAddress, history, dispatch]);
 
   const handleCreateOrder = async () => {
     if (!selectedCard || !selectedAddress || cartItems.length === 0) {
@@ -50,66 +32,46 @@ const PaymentPage = () => {
 
     setProcessing(true);
     try {
+      const formattedProducts = cartItems.map(item => ({
+        product_id: Number(item.product.id),
+        count: Number(item.count),
+        detail: ""
+      }));
+
       const orderData = {
-        address_id: selectedAddress.id,
-        card_no: selectedCard.card_no,
+        address_id: Number(selectedAddress.id),
+        order_date: new Date().toISOString(),
+        card_no: Number(selectedCard.card_no.replace(/\s/g, '')),
         card_name: selectedCard.name_on_card,
-        card_expire_month: selectedCard.expire_month,
-        card_expire_year: selectedCard.expire_year,
-        card_ccv: "123",
-        price: totalAmount,
-        products: cartItems.map(item => ({
-          product_id: item.product.id,
-          count: item.count,
-          detail: `${item.color} - ${item.size}`
-        }))
+        card_expire_month: Number(selectedCard.expire_month),
+        card_expire_year: Number(selectedCard.expire_year),
+        card_ccv: 321,
+        price: Number(totalAmount),
+        products: formattedProducts
       };
 
+      console.log('API\'ye gönderilen veri:', orderData);
+
       await dispatch(createOrder(orderData));
+      
+      toast.success('Tebrikler! Siparişiniz başarıyla alındı.');
+      dispatch({ type: 'CLEAR_CART' });
+      dispatch({ type: 'CLEAR_CHECKOUT_DATA' });
+      
+      // Ana sayfa yerine siparişler sayfasına yönlendir
       history.push('/orders');
+      
     } catch (error) {
-      console.error('Sipariş oluşturma hatası:', error);
+      console.error('Sipariş Hatası:', error.response?.data);
       toast.error('Sipariş oluşturulurken bir hata oluştu');
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleAddCard = async (data) => {
-    try {
-      await dispatch(addCard(data));
-      setShowCardForm(false);
-    } catch (error) {
-      console.error('Kart ekleme hatası:', error);
-    }
-  };
-
-  const handleUpdateCard = async (data) => {
-    try {
-      await dispatch(updateCard({ ...data, id: editingCard.id }));
-      setEditingCard(null);
-    } catch (error) {
-      console.error('Kart güncelleme hatası:', error);
-    }
-  };
-
-  const handleDeleteCard = async (cardId) => {
-    if (window.confirm('Bu kartı silmek istediğinizden emin misiniz?')) {
-      try {
-        await dispatch(deleteCard(cardId));
-      } catch (error) {
-        console.error('Kart silme hatası:', error);
-      }
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Ödeme Bilgileri</h1>
-
-      <div className="mb-4 text-sm text-gray-500">
-        Toplam Tutar: {totalAmount.toFixed(2)} TL
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Kayıtlı Kartlar */}
@@ -160,14 +122,6 @@ const PaymentPage = () => {
               </div>
             </div>
           ))}
-
-          <button
-            onClick={() => setShowCardForm(true)}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mt-4"
-          >
-            <Plus className="w-5 h-5" />
-            Yeni Kart Ekle
-          </button>
         </div>
 
         {/* Ödeme Seçenekleri */}
@@ -191,6 +145,14 @@ const PaymentPage = () => {
                 <p className="text-lg font-semibold">{(totalAmount / 6).toFixed(2)} TL x 6</p>
                 <p className="text-sm text-gray-500">Toplam: {totalAmount.toFixed(2)} TL</p>
               </div>
+
+              <button
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors mt-6"
+                onClick={handleCreateOrder}
+                disabled={processing}
+              >
+                {processing ? 'İşleniyor...' : 'Siparişi Tamamla'}
+              </button>
             </div>
           ) : (
             <div className="text-center text-gray-500 p-8">
@@ -198,48 +160,6 @@ const PaymentPage = () => {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Kart Formu Modal */}
-      {(showCardForm || editingCard) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingCard ? 'Kartı Düzenle' : 'Yeni Kart Ekle'}
-            </h2>
-            <CardForm
-              onSubmit={editingCard ? handleUpdateCard : handleAddCard}
-              initialData={editingCard}
-            />
-            <button
-              onClick={() => {
-                setShowCardForm(false);
-                setEditingCard(null);
-              }}
-              className="mt-4 w-full bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
-            >
-              İptal
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Ödeme Butonu */}
-      <div className="mt-8">
-        <button
-          className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          disabled={!selectedCard || processing}
-          onClick={handleCreateOrder}
-        >
-          {processing ? (
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              İşleniyor...
-            </div>
-          ) : (
-            'Ödemeyi Tamamla'
-          )}
-        </button>
       </div>
     </div>
   );

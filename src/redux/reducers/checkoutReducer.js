@@ -6,7 +6,6 @@ const initialState = {
 const checkoutReducer = (state = initialState, action) => {
   switch (action.type) {
     case 'SET_SHIPPING_ADDRESS':
-      console.log('Setting address in reducer:', action.payload);
       return {
         ...state,
         address: action.payload

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
 const CategoryDropdown = ({ isOpen }) => {
-  const categories = useSelector(state => state.categories.items);
+  const categories = useSelector(state => state.categories?.items || []);
   
   // Kategorileri cinsiyete göre grupla
   const groupedCategories = categories.reduce((acc, category) => {
@@ -29,7 +29,7 @@ const CategoryDropdown = ({ isOpen }) => {
               {items.map(category => (
                 <Link
                   key={category.id}
-                  to={`/shop/${gender}/${category.code.split(':')[1]}`}
+                  to={`/shop/${gender}/${category.code?.split(':')[1]}`}
                   className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-md group"
                 >
                   <div className="w-12 h-12 overflow-hidden rounded">

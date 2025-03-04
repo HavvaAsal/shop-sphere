@@ -10,23 +10,29 @@ const initialState = {
   error: null
 };
 
-export default function categoryReducer(state = initialState, action) {
+const categoryReducer = (state = initialState, action) => {
   switch (action.type) {
     case FETCH_CATEGORIES_START:
-      return { ...state, loading: true };
+      return {
+        ...state,
+        loading: true,
+        error: null
+      };
     case FETCH_CATEGORIES_SUCCESS:
-      return { 
-        ...state, 
+      return {
+        ...state,
         items: action.payload,
-        loading: false 
+        loading: false
       };
     case FETCH_CATEGORIES_ERROR:
-      return { 
-        ...state, 
+      return {
+        ...state,
         loading: false,
-        error: action.payload 
+        error: action.payload
       };
     default:
       return state;
   }
-} 
+};
+
+export default categoryReducer; 

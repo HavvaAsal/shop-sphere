@@ -13,41 +13,34 @@ export const FETCH_ORDERS_ERROR = 'FETCH_ORDERS_ERROR';
 export const createOrder = (orderData) => async (dispatch) => {
   dispatch({ type: CREATE_ORDER_START });
   try {
-    // API'nin beklediği formatta veriyi hazırla
+    // API'nin tam olarak beklediği format
     const formattedOrderData = {
-      address_id: orderData.address_id,
-      order_date: new Date().toISOString(),
-      card_no: orderData.card_no.replace(/\s/g, ''),
+      address_id: parseInt(orderData.address_id),
+      order_date: orderData.order_date,
+      card_no: orderData.card_no,  // string olarak gönder
       card_name: orderData.card_name,
-      card_expire_month: orderData.card_expire_month,
-      card_expire_year: orderData.card_expire_year,
-      card_ccv: orderData.card_ccv,
-      price: orderData.price,
+      card_expire_month: parseInt(orderData.card_expire_month),
+      card_expire_year: parseInt(orderData.card_expire_year),
+      card_ccv: parseInt(orderData.card_ccv),
+      price: parseFloat(orderData.price),
       products: orderData.products.map(item => ({
-        product_id: item.product_id,
-        count: item.count,
-        detail: item.detail
+        product_id: parseInt(item.product_id),
+        count: parseInt(item.count),
+        detail: item.detail || ''
       }))
     };
 
+    console.log('API\'ye gönderilen veri:', formattedOrderData); // Debug için
+
     const response = await api.post('/order', formattedOrderData);
     
-    // Sipariş başarılı
+    // Başarılı işlemler
     dispatch({ type: CREATE_ORDER_SUCCESS, payload: response.data });
-    
-    // Sepeti temizle
-    dispatch({ type: 'CLEAR_CART' });
-    
-    // Checkout verilerini temizle
-    dispatch({ type: 'CLEAR_CHECKOUT_DATA' });
-    
-    // Başarı mesajı göster
-    toast.success('Siparişiniz başarıyla oluşturuldu! Teşekkür ederiz.');
     
     return response.data;
   } catch (error) {
+    console.error('API Hatası:', error.response?.data);
     dispatch({ type: CREATE_ORDER_ERROR, payload: error.message });
-    toast.error('Sipariş oluşturulurken bir hata oluştu');
     throw error;
   }
 };
