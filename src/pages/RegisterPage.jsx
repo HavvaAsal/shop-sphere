@@ -1,5 +1,5 @@
+import SignupForm from '@/components/SignUpForm';
 import React from 'react';
-import SignupForm from '../components/SignupForm';
 import { Link } from 'react-router-dom';
 
 const RegisterPage = () => {
@@ -16,7 +16,7 @@ const RegisterPage = () => {
 
       {/* Content */}
       <main>
-        <SignupForm />
+        <SignupForm/>
       </main>
 
       {/* Footer */}
